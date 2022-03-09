@@ -17,7 +17,7 @@ dnSpy does not save comments, uneeded white space, cannot access all the code an
   - Deobfuscate
      - Remove junk code
      - Rename used gibberish-code
-     - Remove unreadable compiler-garbo
+     - Humanify unreadable compiler-garbo (make sure it compiles same as mod!)
   - Comment on shit
   - Improve code style for readability
 3. Keep this repo updated with each mod update for source control. Plan for missed files, a full dump and deobf should be done every month or two.
