@@ -1,5 +1,5 @@
 # IQoL Decompiled
-The decompiled and deobfuscated files for Intralism and IQoL (WORK IN PROGRESS)
+The decompiled and deobfuscated files for Intralism and IQoL.
 
 This repo is a resource to allow for better organization, version tracking, and potential collaboration for the [IQoL Mod](https://github.com/FlyingRabidUnicornPig/IntralismQoLMod) project.
 
