@@ -7,7 +7,7 @@ __**This is not the source code to Intralism**__
 
 This is the result of decompiling each class the Assembly-CSharp.dll file through dnSpy and dumping each class, with this repo hosting additional modifications for readability.
 
-dnSpy does not save comments or extra white space, cannot access all the code and will change other aspects of submitted code on compile; dnspy's goal is to produce computer-focused code, not human code. While I've adapted to this "hostile" environment quite well, it's recently been a pain trying to manage larger features over multiple days. It's time I've adapted further.
+dnSpy does not save comments or extra white space, cannot access all the original code, and will change submitted code when compiling; a compiler's goal is to produce computer-focused code, not human-focused code. While I've adapted to this "hostile" environment quite well, it's recently been a pain trying to manage larger features over multiple days. It's time I've adapted further.
 
 ## Road Map
 
