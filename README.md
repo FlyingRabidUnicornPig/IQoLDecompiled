@@ -3,7 +3,7 @@ The decompiled and deobfuscated files for Intralism and IQoL (WORK IN PROGRESS)
 
 This repo is a resource to allows for better organization, version tracking, and potential collaboration for the [IQoL Mod](https://github.com/FlyingRabidUnicornPig/IntralismQoLMod) project.
 
-**This is not the source code to Intralism**
+__**This is not the source code to Intralism**__
 
 This is the result of decompiling each class in the Assembly-CSharp.dll file through dnSpy, with added modifications to be more human-readable.
 
