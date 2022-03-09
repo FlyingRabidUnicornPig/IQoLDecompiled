@@ -1,13 +1,13 @@
 # IQoL Decompiled
 The decompiled and deobfuscated files for Intralism and IQoL (WORK IN PROGRESS)
 
-This repo is a resource to allows for better organization, version tracking, and potential collaboration for the [IQoL Mod](https://github.com/FlyingRabidUnicornPig/IntralismQoLMod) project.
+This repo is a resource to allow for better organization, version tracking, and potential collaboration for the [IQoL Mod](https://github.com/FlyingRabidUnicornPig/IntralismQoLMod) project.
 
 __**This is not the source code to Intralism**__
 
-This is the result of decompiling each class in the Assembly-CSharp.dll file through dnSpy, with added modifications to be more human-readable.
+This is the result of decompiling each class the Assembly-CSharp.dll file through dnSpy and dumping each class, with this repo hosting additional modifications for readability.
 
-dnSpy does not save comments, uneeded white space, cannot access all the code and will change other aspects of my code, as dnspy's goal is to produce computer-focused, code, not human code. While I've adapted to this "hostile" environment quite well, it's recently been a pain trying to manage larger features over multiple days. It's time I've adapted further.
+dnSpy does not save comments or extra white space, cannot access all the code and will change other aspects of submitted code on compile; dnspy's goal is to produce computer-focused code, not human code. While I've adapted to this "hostile" environment quite well, it's recently been a pain trying to manage larger features over multiple days. It's time I've adapted further.
 
 ## Road Map
 
