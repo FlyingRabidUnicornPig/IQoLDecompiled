@@ -11,3 +11,5 @@ Methods on this repo will follow the order as seen in dnSpy unless assinine (i.e
 I believe dnspy methods can be rearranged by copy/pasting the whole class, but that requires a deobf'd/editable class, not always available.
 
 dnSpy uses `this` for all members and `base` for base methods even if they aren't overwritten. The repo will follow this style.
+
+Code does not need to be the same between both as long as the function is the same. This repo is for readability, dnSpy is for functionality.
