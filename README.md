@@ -3,11 +3,13 @@ The decompiled and deobfuscated files for Intralism and IQoL (WORK IN PROGRESS)
 
 This repo is a resource to allow for better organization, version tracking, and potential collaboration for the [IQoL Mod](https://github.com/FlyingRabidUnicornPig/IntralismQoLMod) project.
 
-__**This is not the source code to Intralism**__
+### This is not the source code to Intralism.
+### This contains no assets from Intralism.
+### This cannot be used to rebuild Intralism.
 
-This is the result of decompiling each class the Assembly-CSharp.dll file through dnSpy and dumping each class, with this repo hosting additional modifications for readability.
+This is the result of decompiling each class in `Assembly-CSharp.dll` through dnSpy and dumping the results in this repo. Additional, non-critical modifications such as white-space adjustment and comments will make this repo more readable than dnSpy.
 
-dnSpy does not save comments or extra white space, cannot access all the original code, and will change submitted code when compiling; a compiler's goal is to produce computer-focused code, not human-focused code. While I've adapted to this "hostile" environment quite well, it's recently been a pain trying to manage larger features over multiple days. It's time I've adapted further.
+dnSpy does not save comments or extra white space, cannot access all the original code, and can drastically change submitted code when compiling; a compiler's goal is to produce computer-focused code, not human-focused code. While I've adapted to this "hostile" environment quite well, it's recently been a pain trying to manage larger features over multiple days. It's time I've adapted further.
 
 ## Road Map
 
@@ -20,4 +22,4 @@ dnSpy does not save comments or extra white space, cannot access all the origina
      - Humanify unreadable compiler-garbo (make sure it compiles same as mod!)
   - Comment on shit
   - Improve code style for readability
-3. Keep this repo updated with each mod update for source control. Plan for missed files, a full dump and deobf should be done every month or two.
+3. Keep this repo updated with each IQoL update for source control. Plan for missed files, a double-check should be done every month or two.
