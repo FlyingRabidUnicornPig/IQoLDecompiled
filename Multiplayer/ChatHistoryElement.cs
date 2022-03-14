@@ -26,34 +26,34 @@ public class ChatHistoryElement : MonoBehaviour
 
 	private IEnumerator CreateUserIcon(CSteamID steamId)
 	{
-        // Load username
+		// Load username
 		yield return base.StartCoroutine(Singleton<ResourcesManager>.Instance.LoadSteamPlayername(steamId, false));
 		
-        // Color the name
-        this.nicknameText.text = ResourcesManager.GetLoadedSteamPlayernameWithColoredRank(steamId, true);
+		// Color the name
+        	this.nicknameText.text = ResourcesManager.GetLoadedSteamPlayernameWithColoredRank(steamId, true);
 		
-        // Load Avatar
-        yield return base.StartCoroutine(Singleton<ResourcesManager>.Instance.LoadAvatar(steamId, false));
+		// Load Avatar
+		yield return base.StartCoroutine(Singleton<ResourcesManager>.Instance.LoadAvatar(steamId, false));
 		if (ResourcesManager.GetLoadedAvatar(steamId))
 			this.icon.sprite = ResourcesManager.GetLoadedAvatar(steamId);
 		
-        // Avatar background color
+		// Avatar background color
 		RanksSystem.PlayersRank loadedRank = RanksSystem.GetLoadedRank(steamId);
-	    int rank = loadedRank != null ? loadedRank.place : 0;
-        this.bg.color = RanksSystem.GetRankColor(rank, false);
+		int rank = loadedRank != null ? loadedRank.place : 0;
+		this.bg.color = RanksSystem.GetRankColor(rank, false);
 		
-        // Contributor icon
-        yield return base.StartCoroutine(Singleton<ContributorSystem>.Instance.LoadContributor(steamId));
-        this.contributorGO.SetActive(Singleton<ContributorSystem>.Instance.IsContributor(steamId));
+		// Contributor icon
+		yield return base.StartCoroutine(Singleton<ContributorSystem>.Instance.LoadContributor(steamId));
+		this.contributorGO.SetActive(Singleton<ContributorSystem>.Instance.IsContributor(steamId));
 		
-        // Fit content
-        yield return base.StartCoroutine(base.GetComponent<ContentSizeFitterFx>().RunFix());
-        yield break;
+		// Fit content
+		yield return base.StartCoroutine(base.GetComponent<ContentSizeFitterFx>().RunFix());
+		yield break;
 	}
 
 	public ChatHistoryElement.ChatHistoryType messageType;
 
-    // Visible Shit
+	// Visible Shit
 	public Text nicknameText;
 	public Image bg;
 	public Image icon;
