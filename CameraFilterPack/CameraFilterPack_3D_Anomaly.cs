@@ -1,5 +1,6 @@
 /*
-Importance of this class: Unknown
+Importance of this class: Unknown. Only a few filters are used by default and through shaders.
+TODO: Give Users access to this shit lol.
 
 Purpose of this class: Part of camera filter pack
 
