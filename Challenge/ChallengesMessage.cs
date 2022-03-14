@@ -24,20 +24,19 @@ public class ChallengesMessage : Singleton<ChallengesMessage>
 		}
 		else // From online?
 		{
-			yield return base.StartCoroutine(Singleton<ResourcesManager>.Instance.LoadSpriteFromURL("skin." + challenge.id
-                + ".icon", challenge.icon, false));
+			yield return base.StartCoroutine(Singleton<ResourcesManager>.Instance.LoadSpriteFromURL("skin." + challenge.id + ".icon", challenge.icon, false));
 			this.icon.sprite = (Sprite)ResourcesManager.GetLoadedResource("skin." + challenge.id + ".icon");
 		}
 
 		// Set values
-        	this.progress.value = challenge.GetProgress();
+		this.progress.value = challenge.GetProgress();
 		this.header.text = LocalizationService.Instance.GetLocalizatedText(headerText);
 		this.message.text = challengeInfo;
 
-        	// Show "Challenge Complete" overlay
+		// Show "Challenge Complete" overlay
 		yield return base.StartCoroutine(Singleton<UI>.Instance.SwitchViewAnimation(this.canvas, true, null, true, 0.2f, true));
 		yield return new WaitForSeconds(this.duration);
-        	yield return base.StartCoroutine(Singleton<UI>.Instance.SwitchViewAnimation(this.canvas, false, null, true, 0.2f, true));
+		yield return base.StartCoroutine(Singleton<UI>.Instance.SwitchViewAnimation(this.canvas, false, null, true, 0.2f, true));
 		yield break;
 	}
 	
