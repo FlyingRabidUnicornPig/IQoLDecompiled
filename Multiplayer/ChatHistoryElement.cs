@@ -30,7 +30,7 @@ public class ChatHistoryElement : MonoBehaviour
 		yield return base.StartCoroutine(Singleton<ResourcesManager>.Instance.LoadSteamPlayername(steamId, false));
 		
 		// Color the name
-        	this.nicknameText.text = ResourcesManager.GetLoadedSteamPlayernameWithColoredRank(steamId, true);
+		this.nicknameText.text = ResourcesManager.GetLoadedSteamPlayernameWithColoredRank(steamId, true);
 		
 		// Load Avatar
 		yield return base.StartCoroutine(Singleton<ResourcesManager>.Instance.LoadAvatar(steamId, false));
