@@ -29,8 +29,22 @@ public class BuildInfo : MonoBehaviour
 
 		// Digging through GameObjects like your doctor dug through your asshole to extract that thing you knew you shouldn't have put up there.
 		((GameObject)base.GetComponent<Button>().onClick.GetPersistentTarget(0)).GetComponentInChildren<Text>().text = 
-			"Code, design:\n• Oxy949 (Konstantin Kustov)\n• Dust\n\nMaps difficulty algorithm:\n• Dekolator" +
-			"\n• Nikl\n\nSpecial thanks:\n• Dymchick1\n• Darina.Wolf\n• English Intralism Team\n\nThanks for playing!\n\nkick a dog";
+			"Code, design:\n" +
+			"• Oxy949 (Konstantin Kustov)\n" +
+			"• Dust\n" +
+			"\n" +
+			"Maps difficulty algorithm:\n" +
+			"• Dekolator\n" +
+			"• Nikl\n" +
+			"\n" +
+			"Special thanks:\n" +
+			"• Dymchick1\n" + 
+			"• Darina.Wolf\n" +
+			"• English Intralism Team\n" +
+			"\n" +
+			"Thanks for playing!\n" + 
+			"\n" +
+			"kick a dog";
 		
 		// Fit text
 		base.StartCoroutine(base.GetComponent<ContentSizeFitterFx>().RunFix());
