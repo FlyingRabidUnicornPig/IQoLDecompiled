@@ -15,7 +15,7 @@ public class ChallengesMessage : Singleton<ChallengesMessage>
 {
 	public IEnumerator ShowMessage(Challenge challenge, string headerText, string challengeInfo)
 	{
-        // Grab skin icon from resources or online 
+		// Grab skin icon from resources or online 
 		if (!challenge.icon.StartsWith("http")) // From resources
 		{
 			string text = "challenges/" + challenge.icon;
@@ -30,21 +30,21 @@ public class ChallengesMessage : Singleton<ChallengesMessage>
 		}
 
 		// Set values
-        this.progress.value = challenge.GetProgress();
+        	this.progress.value = challenge.GetProgress();
 		this.header.text = LocalizationService.Instance.GetLocalizatedText(headerText);
 		this.message.text = challengeInfo;
 
-        // Show "Challenge Complete" overlay
+        	// Show "Challenge Complete" overlay
 		yield return base.StartCoroutine(Singleton<UI>.Instance.SwitchViewAnimation(this.canvas, true, null, true, 0.2f, true));
 		yield return new WaitForSeconds(this.duration);
-        yield return base.StartCoroutine(Singleton<UI>.Instance.SwitchViewAnimation(this.canvas, false, null, true, 0.2f, true));
+        	yield return base.StartCoroutine(Singleton<UI>.Instance.SwitchViewAnimation(this.canvas, false, null, true, 0.2f, true));
 		yield break;
 	}
-
-    // Container
+	
+	// Container
 	public GameObject canvas;
-
-    // Visible Shit
+	
+	// Visible Shit
 	public Image icon;
 	public Slider progress;
 	public Text header;
