@@ -7,7 +7,7 @@ This repo will keep dnSpy's Class structure
   - Members
   - Classes
 
-Methods on this repo will follow the order as seen in dnSpy unless assinine (i.e. a group of methods that only work with each other but are hundreds of lines apart).
+Methods on this repo will follow the order as seen in dnSpy unless asinine (i.e. a group of methods that only work with each other but are hundreds of lines apart).
 I believe dnspy methods can be rearranged by copy/pasting the whole class, but that requires a deobf'd/editable class, not always available.
 
 dnSpy uses `this` for all members and `base` for base methods even if they aren't overwritten. The repo will follow this style.
