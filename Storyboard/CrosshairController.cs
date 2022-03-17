@@ -33,7 +33,7 @@ public class CrosshairController : EnvironmentController
 			// FIX: If mapper wants to make a color fully transparent or back again it'll instantly snap to in/visible, bad.
 			//      Vanilla code assumnes only user setting will change crosshair.
 			//      Track current colors outside of forloop to fix?
-			renderer.enabled = this.color.a == 0f;
+			renderer.enabled = this.color.a != 0f;
 
 			// If there is something of value to draw, draw the crosshair
 			if (renderer.enabled)
