@@ -1,6 +1,6 @@
 Since this is intended to be used alongside IQoL work, some "faults" or "unneccessites" from dnSpy will be retained. This is to make finding/matching code easier between the two.
 
-This repo will keep dnSpy's Class structure
+This repo will keep dnSpy's Class structure (just found it this isn't consistent NotLikeThis)
 - Head Class
   - Methods
   - Constructors
