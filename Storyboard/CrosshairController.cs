@@ -10,7 +10,7 @@ public class CrosshairController : EnvironmentController
 	public override void Awake()
 	{
 		base.Awake();
-		this.Renderer = base.GetComponentsInChildren<Renderer>();
+		this.Renderers = base.GetComponentsInChildren<Renderer>();
 	}
 
 	public CrosshairController()
@@ -28,17 +28,23 @@ public class CrosshairController : EnvironmentController
 	{
 		base.Update();
 
-		foreach (Renderer renderer in this.Renderer)
+		foreach (Renderer renderer in this.Renderers)
 		{
-			// Lerp colors this frame
-			Color newColor = Helpers.Damp(render.material.GetColor("_Color"), this.color, this.colorLerp);
-			renderer.material.SetColor("_Color", newColor);
-			
-			newColor = Helpers.Damp(render.material.GetColor("_EmissionColor"), this.color * (this.emission + 1f), this.colorLerp);
-			renderer.material.SetColor("_EmissionColor", newColor);
-			
-			// If any of our colors are completely invisible, disable the renderer
-			renderer.enabled = this.color.a != 0f;
+			// FIX: If mapper wants to make a color fully transparent or back again it'll instantly snap to in/visible, bad.
+			//      Vanilla code assumnes only user setting will change crosshair.
+			//      Track current colors outside of forloop to fix?
+			renderer.enabled = this.color.a == 0f;
+
+			// If there is something of value to draw, draw the crosshair
+			if (renderer.enabled)
+			{
+				// Lerp colors this frame
+				Color lerpedColor = Helpers.Damp(renderer.material.GetColor("_Color"), this.color, this.colorLerp);
+				renderer.material.SetColor("_Color", lerpedColor);
+
+				lerpedColor = Helpers.Damp(renderer.material.GetColor("_EmissionColor"), this.color * (this.emission + 1f), this.colorLerp);
+				renderer.material.SetColor("_EmissionColor", lerpedColor);
+			}
 		}
 	}
 
@@ -46,6 +52,7 @@ public class CrosshairController : EnvironmentController
 	{
 		base.Reset();
 
+		// Why do Reset()s and Constructors never match?
 		this.color = new Color(0.5f, 0.5f, 0.5f, Singleton<SaveSystem>.Instance.GetFloat("settings.crosshairopacity", 0.2f, null));
 		
 		this.colorLerp = 10f;
@@ -55,7 +62,7 @@ public class CrosshairController : EnvironmentController
 	public void SetColor(Color newColor, float lerpSpeed)
 	{
 		// Mod: If the mapper hasn't defined a transparency, use the user's crosshair transparency setting.
-		// Note: Mappers cannot use #FF for Alpha, need to use #FE, change?
+		// NOTE: Mappers cannot use #FF for Alpha, need to use #FE, change implementation?
 		if (newColor.a >= 1f)
 			newColor.a = Singleton<SaveSystem>.Instance.GetFloat("settings.crosshairopacity", 0.2f, null);
 

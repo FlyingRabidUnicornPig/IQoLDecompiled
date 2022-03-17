@@ -15,7 +15,7 @@ public class ChatHistoryElement : MonoBehaviour
 	public void Init(string message)
 	{
 		this.message.text = message;
-		base.GetComponent<ContentSizeFitterFx>().DoFix();
+		base.GetComponent<ContentSizeFitterFx>().RequestFix();
 	}
 
 	public void Init(CSteamID steamId, string message)
