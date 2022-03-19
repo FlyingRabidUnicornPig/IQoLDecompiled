@@ -1,7 +1,7 @@
 /*
 Importance of this class: Potentially highly important.
 
-Purpose of this class: Related to user authentication, with steam? With Intralism? more needs to be figured out.
+Purpose of this class: Related to user authentication, with steam
 
 Deobf status: Will not recompile in current state! Awful. Tons of Junk, obf'd vars*/
 
