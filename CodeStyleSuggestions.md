@@ -12,4 +12,4 @@ I believe dnspy methods can be rearranged by copy/pasting the whole class, but t
 
 dnSpy uses `this` for all members and `base` for base methods even if they aren't overwritten. The repo will follow this style.
 
-Code does not need to be the same between both as long as the function is the same. This repo is for readability, dnSpy is for functionality.
+Code does not need to be the same between both as long as the function is the same. This repo is for readability, dnSpy is for functionality. However, it should be able to copy/paste a repo class into the appropriate dnspy class without unwanted in-game alterations.
