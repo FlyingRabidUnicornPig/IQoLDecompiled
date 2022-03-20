@@ -2,8 +2,7 @@ Since this is intended to be used alongside IQoL work, some "faults" or "unnecce
 
 This repo will keep dnSpy's Class structure (just found it this isn't consistent NotLikeThis)
 - Head Class
-  - Methods
-  - Constructors
+  - Methods/Constructors
   - Members
   - Classes
 
