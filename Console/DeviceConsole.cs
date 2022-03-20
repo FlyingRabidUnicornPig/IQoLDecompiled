@@ -395,9 +395,9 @@ public class DeviceConsole : Singleton<DeviceConsole>
 	{
 		this.CarefulConsoleLog(string.Format("<color=#{0}>{1}</color>", this.ColorToString(this.headerColour), this.headerText), null);
 		this.CarefulConsoleLog(string.Format("<color=#{0}>{1}</color>", this.ColorToString(this.headerColour),
-			"       ██╗ ████╗   ████╗ ██╗\n" +
-			"  ██╗  ██║██╔═██╗ ██╔═██╗██║\n" +
-			"██████╗██║██║ ██║ ██║ ██║██║\n" +
+			"       ██╗ ████╗         ██╗\n" +
+			"  ██╗  ██║██╔═██╗  ████╗ ██║\n" +
+			"██████╗██║██║ ██║ ██╔═██╗██║\n" +
 			"╚═██╔═╝██║██║ ██║ ██║ ██║██║\n" +
 			"  ╚═╝  ██║╚██████╗╚████╔╝███████╗\n" +
 			"       ╚═╝ ╚═════╝ ╚═══╝ ╚══════╝"),
