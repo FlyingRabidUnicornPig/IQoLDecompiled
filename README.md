@@ -5,7 +5,7 @@ This repo is a resource to allow for better organization, version tracking, and 
 
 ### This is not the source code to Intralism.
 ### This contains no assets from Intralism.
-### This cannot be used to rebuild Intralism.
+### These files cannot rebuild Intralism.
 
 This is the result of decompiling each class in `Assembly-CSharp.dll` through dnSpy and dumping the results in this repo. Additional, non-critical modifications such as white-space adjustment and comments will make this repo more readable than dnSpy.
 
@@ -13,13 +13,14 @@ dnSpy does not save comments or extra white space, cannot access all the origina
 
 ## Road Map
 
-1. Copy-Paste the contents of each class from the current version of IQoL into individual files for this repo
+1. Copy-Paste the contents of each class from the current version of IQoL into individual files for this repo (In progress for all classes)
  
-2. Cleanup
+1.5 Cleanup (In progress for more important classes)
   - Deobfuscate
      - Remove junk code
      - Rename used gibberish-code
      - Humanify unreadable compiler-garbo (make sure it compiles same as mod!)
   - Comment on shit
   - Improve code style for readability
-3. Keep this repo updated with each IQoL update for source control. Plan for missed files, a double-check should be done every month or two.
+2. Keep this repo updated with each IQoL update for source control. Plan for missed files, a double-check should be done every month or two.
+3. When do i make money from doing this?
