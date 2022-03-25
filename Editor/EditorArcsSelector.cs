@@ -17,65 +17,72 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 
 	private void Update()
 	{
-		this.DrawSelectionBox();
-		
-		bool isPointerOverObject = EventSystem.current.IsPointerOverGameObject();
-		if (Input.GetMouseButtonDown(0) && !isPointerOverObject && !this.IsSelecting)
-		{
-			if (!Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out this.AreYouWinningSon, 100f, this.arcsLayerMask))
-			{
-				this.IsSelecting = true;
-				this.selectionBoxPanel.sizeDelta = new Vector2(0f, 0f);
-				this.ResetSelectionBoxAnimation();
-			}
-			else if (this.AreYouWinningSon.transform.gameObject.GetComponentInParent<EditorEvent>().isSelected && !IsModButtonPressed)
-			{
-				this.IsDraggingObj = true;
+		bool mouseRelease = Input.GetMouseButtonUp(0);
+		bool isPointerOverObject = !mouseRelease && EventSystem.current.IsPointerOverGameObject();
+		bool didNotClickObject = !mouseRelease && Input.GetMouseButtonDown(0) && !isPointerOverObject;
+		bool raycastHit = mouseRelease || didNotClickObject 
+			? Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out this.AreYouWinningSon, 100f, this.arcsLayerMask)
+			: false;
+		EditorEvent hoveredEvent = !raycastHit ? null : AreYouWinningSon.transform.gameObject.GetComponentInParent<EditorEvent>();
 
-				for (int i = 0; i < this.selectedunits.Count; i++)
-					this.selectedunits[i].GetComponent<EditorEvent>().dragController.OnDragStart(this.MousePositionInWorld);
+		this.MousePositionInWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+		if (didNotClickObject)
+		{
+			if (!this.IsSelecting)
+			{
+				// If we didn't click on a selected object, start selecting
+				if (!raycastHit)
+				{
+					this.IsSelecting = true;
+					this.selectionBoxPanel.sizeDelta = new Vector2(0f, 0f);
+					this.ResetSelectionBoxAnimation();
+				}
+				// If we click on an already selected object, start dragging wait shouldn't this be impossible? (it is if you do hoveredEvent != null at start /shrug)
+				else if (hoveredEvent.isSelected && !IsModButtonPressed)
+				{
+					this.IsDraggingObj = true;
+
+					for (int i = 0; i < this.selectedunits.Count; i++)
+						this.selectedunits[i].GetComponent<EditorEvent>().dragController.OnDragStart(this.MousePositionInWorld);
+				}
+			}
+
+			this.WorldPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+			// if not dragging (only clicking)
+			if (!this.IsDraggingObj)
+			{
+				// We need to get rid of this garbage. Why are we removing every event and reselecting them every frame fucking garbage
+				if (!IsControlPressed)
+					ResetCurrentSelection();
+
+				// If not pressing alt, add the most recent collider to the selected units
+				if (raycastHit && !IsAltPressed)
+				{
+					hoveredEvent.isSelected = true;
+					this.selectedunits.Add(hoveredEvent.gameObject);
+				}
 			}
 		}
-
-		if (this.IsSelecting && Input.GetMouseButtonUp(0))
+		// Else if the frame we release the mouse
+		else if (mouseRelease)
 		{
-			this.PutUnitsFromDragIntoSelectedUnits();
-			this.IsSelecting = false;
-			ResetSelectionBoxAnimation();
-		}
-
-		// If we're not currently dragging
-		if (!this.IsDraggingObj)
-		{
-			// If the mouse clicked and not on an object
-			if (Input.GetMouseButtonDown(0) && !isPointerOverObject)
-			{
-				this.WorldPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-				SelectArcs();
-			}
-
-			// This confuses me
-			if (Input.GetMouseButtonUp(0) && Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out this.AreYouWinningSon, 100f, this.arcsLayerMask) && this.AreYouWinningSon.transform.gameObject.GetComponentInParent<EditorEvent>() && IsAltPressed && this.selectedunits.Contains(this.AreYouWinningSon.transform.gameObject.GetComponentInParent<EditorEvent>().gameObject))
-			{
-				this.selectedunits.Remove(this.AreYouWinningSon.transform.gameObject.GetComponentInParent<EditorEvent>().gameObject);
-				this.AreYouWinningSon.transform.gameObject.GetComponentInParent<EditorEvent>().isSelected = false;
-			}
-
-			this.MousePositionInWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-
-			// Not sure why these are all members and not local vars
+			// If we were drag-selecting arcs, add them to selected units list
 			if (this.IsSelecting)
-				FigureOutBoundsOfSelectionBox();
-		}
-		// If we're dragging objects, maybe? Idfk i hate this class
-		else
-		{
-			this.MousePositionInWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+			{
+				this.PutUnitsFromDragIntoSelectedUnits();
+				this.IsSelecting = false;
+				ResetSelectionBoxAnimation();
+			}
 
-			if (Input.GetMouseButtonDown(0) && !isPointerOverObject)
-				this.WorldPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-				
-			if (Input.GetMouseButtonUp(0))
+			// If pressing alt, unselect hovered event
+			if (IsAltPressed && raycastHit && this.selectedunits.Contains(hoveredEvent.gameObject))
+			{
+				this.selectedunits.Remove(hoveredEvent.gameObject);
+				hoveredEvent.isSelected = false;
+			}
+
+			// If dragging, stop dragging
+			if (this.IsDraggingObj)
 			{
 				this.IsDraggingObj = false;
 
@@ -87,6 +94,12 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 				Singleton<EditorHistoryHandler>.Instance.SaveState("Events Moved", false);
 			}
 		}
+		// If we're selecting, figure out bounds of box
+		else if (this.IsSelecting && !this.IsDraggingObj)
+			FigureOutBoundsOfSelectionBox();
+		
+		// Draw the box *this frame* (was on a single frame delay before by being first line of this method)
+		this.DrawSelectionBox();
 	}
 
 	private void FigureOutBoundsOfSelectionBox()
@@ -104,47 +117,43 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 		if (this.ScreenPointY > 0f)
 			this.MousePosition.y += this.ScreenPointY;
 					
-		this.CombinedMouseAndScreenIDFK = new Vector2(this.MousePosition.x + Math.Abs(this.ScreenPointX), this.MousePosition.y - Math.Abs(this.ScreenPointY));
+		this.StartPoint = new Vector2(this.MousePosition.x + Math.Abs(this.ScreenPointX), this.MousePosition.y - Math.Abs(this.ScreenPointY));
 				
 	}
 
-	private void SelectArcs()
-	{
-		// We need to get rid of this garbage. Why are we removing every event and reselecting them every frame fucking garbage
-		if (!IsControlPressed)
-			ResetCurrentSelection();
-
-		if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out this.AreYouWinningSon, 100f, this.arcsLayerMask))
-		{
-			// If not pressing alt, add the most recent collider to the selected units
-			if (!IsAltPressed)
-			{
-				this.selectedunits.Add(this.AreYouWinningSon.transform.gameObject.GetComponentInParent<EditorEvent>().gameObject);
-				this.selectedunits[this.selectedunits.Count - 1].GetComponent<EditorEvent>().isSelected = true;
-			}
-		}
-	}
-
+	// Adds all arcs to selected list
 	private void LateUpdate()
 	{
-		this.UnitInDrag.Clear();
+		bool lastWithin = false;
+		bool outside = false;
 		for (int i = 0; this.IsSelecting && i < Singleton<MapEditor>.Instance.eventsContainer.transform.childCount; i++)
 		{
-			GameObject gameObject = Singleton<MapEditor>.Instance.eventsContainer.transform.GetChild(i).gameObject;
-			
-			if (!this.UnitInDrag.Contains(gameObject))
+			GameObject unit = Singleton<MapEditor>.Instance.eventsContainer.transform.GetChild(i).gameObject;
+
+			bool withinBounds = this.UnitWithinDrag(Camera.main.WorldToScreenPoint(unit.transform.position));
+
+			// optimization shit, figuring out if we've iterated out of the bounds (after iterating into them)
+			outside = !withinBounds && lastWithin;
+			EditorEvent fuckYou = unit.GetComponent<EditorEvent>();
+
+			if (outside && !fuckYou.isSelected) break; // Mod: Shitty stop, better performance earlier in the map than later, bad bad
+			                                           // At best, next to no penalty while dragging (we want this all the time) at worst, same fps drops as before
+			// Within bounds? add it
+			if (!outside && withinBounds)
 			{
-				if (this.UnitWithinDrag(Camera.main.WorldToScreenPoint(gameObject.transform.position)))
-				{
-					gameObject.GetComponent<EditorEvent>().isSelected = !IsAltPressed;
-					if (!IsAltPressed)
-						this.UnitInDrag.Add(gameObject);
-				}
-				else if (!IsControlPressed)
-				{
-					gameObject.GetComponent<EditorEvent>().isSelected = false;
-				}
+				fuckYou.isSelected = !IsAltPressed;
+
+				if (!IsAltPressed && !this.UnitInDrag.Contains(unit))
+					this.UnitInDrag.Add(unit);
 			}
+			// Otherwise unadd it
+			else if (!IsControlPressed)
+			{
+				fuckYou.isSelected = false;
+				this.UnitInDrag.Remove(unit);
+			}
+			
+			lastWithin = withinBounds || outside;
 		}
 	}
 
@@ -169,15 +178,19 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 	}
 
 	public void SelectAll()
-	{
-		this.ClearSelection();
-		
+	{		
 		for (int i = 0; i < Singleton<MapEditor>.Instance.eventsContainer.transform.childCount; i++)
 		{
 			GameObject gameObject = Singleton<MapEditor>.Instance.eventsContainer.transform.GetChild(i).gameObject;
 			gameObject.GetComponent<EditorEvent>().isSelected = true;
-			this.selectedunits.Add(gameObject);
+			if (!selectedunits.Contains(gameObject))
+				this.selectedunits.Add(gameObject);
 		}
+	}
+	public EditorArcsSelector()
+	{
+		this.selectedunits = new List<GameObject>();
+		this.UnitInDrag = new List<GameObject>();
 	}
 
 	public bool UnitWithinScreenSpace(Vector2 unit)
@@ -187,7 +200,7 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 
 	public bool UnitWithinDrag(Vector2 unit)
 	{
-		return unit.x > this.MousePosition.x && unit.y < this.MousePosition.y && unit.x < this.CombinedMouseAndScreenIDFK.x && unit.y > this.CombinedMouseAndScreenIDFK.y;
+		return unit.x > this.MousePosition.x && unit.y < this.MousePosition.y && unit.x < this.StartPoint.x && unit.y > this.StartPoint.y;
 	}
 
 	private void DrawSelectionBox()
@@ -210,26 +223,19 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 
 	public void PutUnitsFromDragIntoSelectedUnits()
 	{
-		if (this.UnitInDrag.Count > 0)
-		{
-			for (int i = 0; i < this.UnitInDrag.Count; i++)
-			{
-				if (!this.selectedunits.Contains(this.UnitInDrag[i]))
-				{
-					this.selectedunits.Add(this.UnitInDrag[i]);
-				}
-			}
-		}
+		for (int i = 0; i < this.UnitInDrag.Count; i++)
+			if (!this.selectedunits.Contains(this.UnitInDrag[i]))
+				this.selectedunits.Add(this.UnitInDrag[i]);
+
 		this.UnitInDrag.Clear();
 	}
 
 	public void SaveSelectedToMemory()
 	{
 		this.savedEvents.Clear();
+		
 		for (int i = 0; i < this.selectedunits.Count; i++)
-		{
 			this.savedEvents.Add(this.selectedunits[i].GetComponent<EditorEvent>().mapEvent);
-		}
 	}
 
 	public void ClearSelection()
@@ -252,10 +258,10 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 	private void ResetSelectionBoxAnimation()
 	{
 		if (this.SelectionBoxAnimation != null)
-		{
 			base.StopCoroutine(this.SelectionBoxAnimation);
-		}
-		this.SelectionBoxAnimation = base.StartCoroutine(Singleton<UI>.Instance.SwitchViewAnimation(this.selectionBoxPanel.gameObject, this.IsSelecting, null, true, 0.2f, true));
+
+		this.SelectionBoxAnimation =
+			base.StartCoroutine(Singleton<UI>.Instance.SwitchViewAnimation(this.selectionBoxPanel.gameObject, this.IsSelecting, null, true, 0.2f, true));
 	}
 
 	public List<MapEvent> savedEvents;
@@ -264,7 +270,7 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 
 	public LayerMask arcsLayerMask;
 
-	public List<GameObject> selectedunits = new List<GameObject>();
+	public List<GameObject> selectedunits;
 	private RaycastHit AreYouWinningSon;
 
 	private Vector3 WorldPoint;
@@ -278,10 +284,11 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 	private float MousePositionX;
 	private float MousePositionY;
 	private Vector2 MousePosition;
-	private Vector2 CombinedMouseAndScreenIDFK;
+	private Vector2 StartPoint;
 
-	public List<GameObject> UnitsOnScreenSpace = new List<GameObject>();
-	public List<GameObject> UnitInDrag = new List<GameObject>();
+	// Unused
+	public List<GameObject> UnitsOnScreenSpace;
+	public List<GameObject> UnitInDrag;
 
 	private Coroutine SelectionBoxAnimation;
 }
