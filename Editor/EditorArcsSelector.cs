@@ -38,7 +38,7 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 					this.ResetSelectionBoxAnimation();
 				}
 				// If we click on an already selected object, start dragging wait shouldn't this be impossible? (it is if you do hoveredEvent != null at start /shrug)
-				else if (hoveredEvent.isSelected && !IsModButtonPressed)
+				else if (hoveredEvent.IsSelected && !IsModButtonPressed)
 				{
 					this.IsDraggingObj = true;
 
@@ -58,7 +58,7 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 				// If not pressing alt, add the most recent collider to the selected units
 				if (raycastHit && !IsAltPressed)
 				{
-					hoveredEvent.isSelected = true;
+					hoveredEvent.IsSelected = true;
 					this.selectedunits.Add(hoveredEvent.gameObject);
 				}
 			}
@@ -78,7 +78,7 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 			if (IsAltPressed && raycastHit && this.selectedunits.Contains(hoveredEvent.gameObject))
 			{
 				this.selectedunits.Remove(hoveredEvent.gameObject);
-				hoveredEvent.isSelected = false;
+				hoveredEvent.IsSelected = false;
 			}
 
 			// If dragging, stop dragging
@@ -136,12 +136,12 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 			outside = !withinBounds && lastWithin;
 			EditorEvent fuckYou = unit.GetComponent<EditorEvent>();
 
-			if (outside && !fuckYou.isSelected) break; // Mod: Shitty stop, better performance earlier in the map than later, bad bad
+			if (outside && !fuckYou.IsSelected) break; // Mod: Shitty stop, better performance earlier in the map than later, bad bad
 			                                           // At best, next to no penalty while dragging (we want this all the time) at worst, same fps drops as before
 			// Within bounds? add it
 			if (!outside && withinBounds)
 			{
-				fuckYou.isSelected = !IsAltPressed;
+				fuckYou.IsSelected = !IsAltPressed;
 
 				if (!IsAltPressed && !this.UnitInDrag.Contains(unit))
 					this.UnitInDrag.Add(unit);
@@ -149,7 +149,7 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 			// Otherwise unadd it
 			else if (!IsControlPressed)
 			{
-				fuckYou.isSelected = false;
+				fuckYou.IsSelected = false;
 				this.UnitInDrag.Remove(unit);
 			}
 			
@@ -169,7 +169,7 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 		{
 			GameObject gameObject = Singleton<MapEditor>.Instance.AddNewEvent(currentTime + (mapEvent2.time - time), mapEvent2.data, false);
 			this.selectedunits.Add(gameObject);
-			gameObject.GetComponent<EditorEvent>().isSelected = true;
+			gameObject.GetComponent<EditorEvent>().IsSelected = true;
 		}
 		
 		Singleton<EditorHistoryHandler>.Instance.SaveState("Paste events", false);
@@ -182,7 +182,7 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 		for (int i = 0; i < Singleton<MapEditor>.Instance.eventsContainer.transform.childCount; i++)
 		{
 			GameObject gameObject = Singleton<MapEditor>.Instance.eventsContainer.transform.GetChild(i).gameObject;
-			gameObject.GetComponent<EditorEvent>().isSelected = true;
+			gameObject.GetComponent<EditorEvent>().IsSelected = true;
 			if (!selectedunits.Contains(gameObject))
 				this.selectedunits.Add(gameObject);
 		}
@@ -250,7 +250,7 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 	public void ResetCurrentSelection()
 	{
 		for (int i = 0; i < this.selectedunits.Count; i++)
-			this.selectedunits[i].GetComponent<EditorEvent>().isSelected = false;
+			this.selectedunits[i].GetComponent<EditorEvent>().IsSelected = false;
 		
 		this.selectedunits.Clear();
 	}
