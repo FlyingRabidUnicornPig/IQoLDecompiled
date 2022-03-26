@@ -17,6 +17,7 @@ public class EditorEvent : MonoBehaviour
 	{
 		float audioLength = Singleton<MapEditor>.Instance.audioSampler.audioSources[1].clip.length;
 
+		// Keep time within range (i may get rid of this, i kinda want to have events before or after)
 		this.mapEvent.time = this.mapEvent.time < 0f          ? 0f
 		                   : this.mapEvent.time > audioLength ? audioLength 
 		                   : this.mapEvent.time;
@@ -42,14 +43,16 @@ public class EditorEvent : MonoBehaviour
 		}
 
 		// Turn on just in case
+		// If the data had changed since last frame we will run the whole method to update our imageActive bool vars
 		this.MakeVisible(true, this.lastData != this.mapEvent.data);
-		this.lastData = this.mapEvent.data; // Override optimization (forgot what this is for)
+		this.lastData = this.mapEvent.data;
 
+		// If we're visible and the zoom has changed or its our first visible frame, update
 		if (this.bitObj.active && (!this.ranOnce || Camera.main.orthographicSize != MapEditor.lastZoom))
 		{
 			this.ranOnce = true; // Make sure we run this the first frame to set scale and other bs. Otherwise stay optimized.
 
-			float y = this.mapEvent.data.Contains("SpawnObj") ? 0.5f : 1f; // Changes the y scaling if an arc (why? idr)
+			float y = this.mapEvent.data.Contains("SpawnObj") ? 0.5f : 1f; // Changes the y scaling if an arc, makes arc events smaller
 
 			if (this.bitObj != null && this.bitObj.activeSelf)
 				this.bitObj.transform.localScale = new Vector3(Camera.main.orthographicSize / 50f, y, this.scaleMult.z);
@@ -104,8 +107,9 @@ public class EditorEvent : MonoBehaviour
 
 			if (!string.IsNullOrEmpty(this.mapEvent.data[0]))
 			{
-				SetColor(new Color(0f, 0.7f, 0f));
+				SetColor(new Color(0f, 0.7f, 0f)); // Set color to mild Green
 
+				// What extra mods are we supposed to make to this Event?
 				switch (this.mapEvent.data[0])
 				{
 					case "SetBGColor":
@@ -129,7 +133,7 @@ public class EditorEvent : MonoBehaviour
 			}
 			else
 			{
-				SetColor(new Color(1f, 0f, 0f));
+				SetColor(new Color(1f, 0f, 0f)); // Set color to red, something's wrong
 			}
 		}
 	}
@@ -139,26 +143,27 @@ public class EditorEvent : MonoBehaviour
 		if (Singleton<MapEditor>.Instance.eventsCanvases.Count != 2)
 			return Singleton<MapEditor>.Instance.eventsCanvases[this.TrackID].grid.position.y;
 
-		return Singleton<MapEditor>.Instance.eventsCanvases.Find(x => x.forType == (Helpers.IsStoryboardEvent(this.mapEvent.data[0])
-			? MapEditor.EventType.Storyboard : MapEditor.EventType.Gameplay)
-		).grid.position.y;
+		bool isStoryboard = Helpers.IsStoryboardEvent(this.mapEvent.data[0]);
+		return Singleton<MapEditor>.Instance.eventsCanvases.Find(
+			x => x.forType == isStoryboard ? MapEditor.EventType.Storyboard : MapEditor.EventType.Gameplay).grid.position.y;
 	}
-
-	private void MakeVisible(bool visible) => this.MakeVisible(visible, false);
 
 	private bool IsVisible()
 	{
 		Vector3 vector = Camera.main.WorldToScreenPoint(base.transform.position);
 
+		// Is my mom (arc pattern sprite) too fat? Extend her optimization window if she is
 		float arcMod = EditorEvent.yourMomIsSoFat.Contains(this.yourMom) ? 100f : 50f;
 		float spriteMod = this.imageRightActive ? 200f : 0f;
 
-		// Am I on screen? Any part sticking out?
+		// Am I on screen?
 		return vector.x >= -arcMod - spriteMod
 		    && vector.x <= (float)Screen.width + (this.imageRightActive ? 0f : arcMod)
 			&& vector.y >= 0f
 			&& vector.y <= (float)Screen.height;
 	}
+
+	private void MakeVisible(bool visible) => this.MakeVisible(visible, false);
 
 	private void MakeVisible(bool visible, bool overrideOptimization = true)
 	{
@@ -183,10 +188,10 @@ public class EditorEvent : MonoBehaviour
 	{
 		try
 		{
-			this.imageRight.sprite = Resources.LoadAll<Sprite>("LevelEditor/icons")[0]; // load sprite
-			this.imageRight.color = Helpers.StringToColor(this.mapEvent.data[1]); // load color to be
+			this.imageRight.sprite = Resources.LoadAll<Sprite>("LevelEditor/icons")[0]; // blank color background image
+			this.imageRight.color = Helpers.StringToColor(this.mapEvent.data[1]); // color it
 			this.iconSpriteActive = true; // turn on image
-			this.imageRightActive = true; // The right one specifically (pokes right out of bit)
+			this.imageRightActive = true; // The right one specifically (pokes out of right side of bit)
 		}
 		catch (Exception ex)
 		{
@@ -282,6 +287,7 @@ public class EditorEvent : MonoBehaviour
 		get => this.trackID;
 		set => this.trackID = value;
 	}
+
 	public void SetColor(Color color)
 	{
 		this.bitObj.GetComponent<Renderer>().material.SetColor("_Color", color);
@@ -294,9 +300,12 @@ public class EditorEvent : MonoBehaviour
 	public MapEvent mapEvent;
 
 	public GameObject bitObj;
-	public GameObject iconSprite;
 	public GameObject selectedMarker;
+	public GameObject iconSprite;
 
+	// I feel like this could be a memory/optimization issue
+	// we only need one image yet we have 2 and then the iconSprite gameObject...
+	// We aren't going to use both imageRight and imageCenter, nor will we use iconSprite while using the others.
 	public Image imageRight;
 	public Image imageCenter;
 
@@ -316,8 +325,11 @@ public class EditorEvent : MonoBehaviour
 	private bool imageCenterActive;
 
 	// Optimization vars
-	private int yourMom;
 	private List<string> lastData;
+	// Stores pattern index of arcs for optimization rules
+	private int yourMom;
+	// Contains every arc pattern index that would benefit from a tweak in optimization
+	// (everything with a left or right arc that seemingly "pop" out of existance on edges when using normal opt)
 	private static int[] yourMomIsSoFat = new int[]
 	{
 		1,
