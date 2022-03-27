@@ -15,15 +15,16 @@ dnSpy does not save comments or extra white space, cannot access all the origina
 
 1. Copy-Paste the contents of each class from the current version of IQoL into individual files for this repo (In progress for all classes)
  
-1.5 Cleanup (In progress for more important classes)
+1.5. Cleanup (In progress for more important classes)
   - Deobfuscate
      - Remove junk code
      - Rename used gibberish-code
      - Humanify unreadable compiler-garbo (make sure it compiles same as mod!)
   - Comment on shit
   - Improve code style for readability
-2. Keep this repo updated with each IQoL update for source control. Plan for missed files, a double-check should be done every month or two.
-3. When do i make money from doing this?
+2. Prep for release, squash bugs, finish up cleanup, etc. Then upload new .dll to [IQoL](https://github.com/FlyingRabidUnicornPig/IntralismQoLMod)
+3. Keep this repo updated with each IQoL update for source control. Plan for missed files, a double-check should be done every month or two.
+4. When do i make money from doing this?
 
 ### Bugs To Squash before release
 - Some sliders may start as float sliders when they should be integer sliders in editor. **Workaround** press apply and they will fix themselves.
