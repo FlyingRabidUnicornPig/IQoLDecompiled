@@ -26,6 +26,14 @@ dnSpy does not save comments or extra white space, cannot access all the origina
 3. Keep this repo updated with each IQoL update for source control. Plan for missed files, a double-check should be done every month or two.
 4. When do i make money from doing this?
 
+### New Features for release
+- Fixed quickstart offline mode (hopefully)
+- **Improved Console**
+  - You can see what your commands are doing
+  - Unlocked "cheat" and dev commands
+  - New commands
+    - `logAll < t | f >` set to true to see all logs, not just warnings or errors. This saves to your file as well.
+
 ### Bugs To Squash before release
 - Some sliders may start as float sliders when they should be integer sliders in editor. **Workaround** press apply and they will fix themselves.
 - Editor selector (drag-n-select) will have a drastically inappropriate window for the first frame sometimes, selecting arcs you didn't want to (Extremely bothersome when `ctrl`+selecting). Happens when zoom or time changes since last select. Seems to use the same screen space as the last select. (Maybe reset values after a select-end?) **No Workaround**
