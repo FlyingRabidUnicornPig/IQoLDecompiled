@@ -3,7 +3,7 @@ Importance of this class: yur mum
 
 Purpose of this class: idk yur mum
 
-Deobf status: I'm just doing this one file rn so i can get a little green square on github before i waste the rest of my day on stellaris and weed.
+Deobf status: I'm just doing this one file rn so i can get a little green square on github before i waste the rest of my day on stellaris and more* weed.
 */
 
 using System;
@@ -54,5 +54,4 @@ public class GameEventInfo
 		gameEventInfo.eventtime = this.eventtime;
 	}
 }
-
 // sus

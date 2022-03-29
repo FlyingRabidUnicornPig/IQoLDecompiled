@@ -7,5 +7,5 @@ using UnityEngine;
 
 public class ExitButton : MonoBehaviour
 {
-	public void OnClick() => Application.Quit();
+	public void OnClick() => Singleton<GameManager>.Instance.ExitGame(); // I mean Application.Quit() was fine too?
 }
