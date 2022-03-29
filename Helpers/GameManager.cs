@@ -52,6 +52,7 @@ public class GameManager : Singleton<GameManager>
 	{
 		base.StopAllCoroutines();
 		Singleton<Scene>.Instance.ShowCursor(true);
+
 		UnityEngine.Debug.LogError(error);
 		Singleton<MessageBoxPanel>.Instance.DisplayMessage(error.ToUpper(), "#ok".ToUpper(), new UnityAction(this.ExitGame), true, false, 0f);
 	}
@@ -67,10 +68,6 @@ public class GameManager : Singleton<GameManager>
 	public new void Awake()
 	{
 		base.Awake();
-
-		UnityEngine.Debug.unityLogger.filterLogType = LogType.Warning; // Oooh is this what prevents normal users from seeing more debug shit?
-		                                                               // I should make a command that allows users to see more debug if they want.
-																	   // Right now I modded my UnityEngine.dll to say my Intralism is in debug; overrides this filter
 	}
 
 	public void FinishedMap(FinishedMapInfo fmi)
@@ -107,19 +104,28 @@ public class GameManager : Singleton<GameManager>
 	private bool verified;
 	public void OnUserVerified(bool offlineMode = false)
 	{
-		if (verified && !offlineMode) return; // HACK: Allow offline mode to always go through, causes bug.
-		                                      // BUG: Can get into a semi-offline state,
-		                                      //      where intralism stuff won't work, official, loved, funny maps, etc.
-											  //      but steam stuff will, rank submission, workshop maps
+		if (verified && !offlineMode) return; // HACK: Allow offline mode to always go through, causes
+		                                      // BUG : Can get into a semi-offline state,
+		                                      //       where intralism stuff won't work, official, loved, funny maps, etc.
+											  //       but steam stuff will, rank submission, workshop maps
+											  
 											  // TODO: Make sure this does work when connection to Intralism is flakey, I think it does now, but should double check.
 										      //       todo: put this comment on the MenuScene if statement, not here.
 		verified = true;
 
 		GameManager.IsOffline = offlineMode;
 
-		if (!GameManager.IsOffline)	SteamUserStats.RequestCurrentStats(); // MOD: Why would you let offline mode attempt to connect to steam?
+		if (!GameManager.IsOffline)  // MOD: Why did oxy let offline mode attempt to connect to steam?
+			SteamUserStats.RequestCurrentStats();
 
 		Singleton<SaveSystem>.Instance.Init(Helpers.Md5Sum("Data" + SteamUser.GetSteamID().m_SteamID).ToUpper());
+		// Are we going to see all messages or just warnings/errors
+		UnityEngine.Debug.unityLogger.filterLogType =
+			(Singleton<SaveSystem>.Instance.GetBool("console.logAll", false, null) ? LogType.Log : LogType.Warning);
+		// Clear log if we don't want to see everything
+		if (UnityEngine.Debug.unityLogger.filterLogType == LogType.Warning)
+			DebugLogs.Instance.ClearLogs();
+
 		Singleton<ItemsHandler>.Instance.Initializate();
 		Singleton<RanksSystem>.Instance.Init();
 		Singleton<LuaEnvironment>.Instance.RunFirstInit();
@@ -137,7 +143,7 @@ public class GameManager : Singleton<GameManager>
 				delegate { this.OnUserVerified(true); }));
 	}
 
-	public string CreateServerURL(string harryPotterPrologue) => (!this.isBeta ? this.dataServerURL : this.betaDataServerURL) + harryPotterPrologue;
+	public string CreateServerURL(string harryPotterEpilogue) => (!this.isBeta ? this.dataServerURL : this.betaDataServerURL) + harryPotterEpilogue;
 
 	public void UpdateOnlineStatus(string details, string state = null, string joinSecret = null, string partyID = null, int partySize = 0, int partyMax = 0)
 	{

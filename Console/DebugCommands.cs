@@ -65,13 +65,7 @@ public class DebugCommands : ScriptableObject
 	public static DebugCommands Instance
 		=> DebugCommands.instance != null ? DebugCommands.instance : DebugCommands.instance = ScriptableObject.CreateInstance<DebugCommands>();
 
-	public List<string> CommandHistory
-	{
-		get
-		{
-			return this.commandHistory;
-		}
-	}
+	public List<string> CommandHistory => this.commandHistory;
 
 	public bool ExecuteCommand(string[] commandNArgs)
 	{
@@ -89,7 +83,7 @@ public class DebugCommands : ScriptableObject
 				if (!this.commands[i].isCheat || Singleton<GameManager>.Instance.IsCheatsAllowed())
 					this.commands[i].method(commandNArgs);
 				else
-					Singleton<GameManager>.Instance.PlayerWarnCheats(); // Lol there is nothing in this method
+					Singleton<GameManager>.Instance.PlayerWarnCheats();
 
 				return true;
 			}

@@ -79,23 +79,24 @@ public class DeviceConsole : Singleton<DeviceConsole>
 		this.DrawHeaderText();
 		this.PreLogIDK();
 		
-		// General Log commands
+		// General Logging
 		DebugLogs instance = DebugLogs.Instance;
 		instance.OnLogAdded = (Action<DebugLogs.Log>)Delegate.Combine(instance.OnLogAdded, new Action<DebugLogs.Log>(this.OnLogAdded));
 		instance.OnLogsCleared = (Action)Delegate.Combine(instance.OnLogsCleared, new Action(this.OnLogsCleared));
 
-		// All the other commands
+		// Special commands
 		DebugCommands instance2 = DebugCommands.Instance;
 		instance2.AddCommand("help", new DebugCommands.DebugCommand(DeviceConsole.OnHelpCommand), "Prints list of commands", string.Empty, false);
 		instance2.AddCommand("clear", new DebugCommands.DebugCommand(DeviceConsole.OnClearCommand), "Clears all text from the debug console", string.Empty, false);
 		instance2.AddCommand("history", new DebugCommands.DebugCommand(DeviceConsole.OnHistoryCommand), "Prints list of all previous commands", string.Empty, false);
 		instance2.AddCommand("logc", new DebugCommands.DebugCommand(DeviceConsole.OnLogCountCommand), "Prints the number of logs currently held by DebugLogs", string.Empty, false);
-		instance2.AddCommand("quit", new DebugCommands.DebugCommand(DeviceConsole.OnQuitCommand), "Closes the app", string.Empty, false);
 		instance2.AddCommand("plogs", new DebugCommands.DebugCommand(this.OnPrintLogCommand), "Clears the console and prints the logs in the specified range", "<start_index> <end_index>", false);
+		instance2.AddCommand("logAll", new DebugCommands.DebugCommand(DeviceConsole.OnLogAllCommand), "Show all logs", "< true | false >", false);
 		instance2.AddCommand("setAF", new DebugCommands.DebugCommand(this.OnSetAutoFocusCommand), "Sets the boolean value of the Auto Focus Input Field property.", "< true | false >", false);
-		instance2.AddCommand("scenes", new DebugCommands.DebugCommand(this.OnScenesCommand), "Print the list of scenes, avalable in game.", string.Empty, true);
-		instance2.AddCommand("loadscene", new DebugCommands.DebugCommand(DeviceConsole.OnLoadSceneCommand), "Load scene by name or build id", "<scene_name> or <id>", true);
-		instance2.AddCommand("resetach21", new DebugCommands.DebugCommand(this.OnResetAchievement21Command), "Reset 21 achievement progress", string.Empty, true);
+		instance2.AddCommand("scenes", new DebugCommands.DebugCommand(this.OnScenesCommand), "Print the list of scenes, avalable in game.", string.Empty, false);
+		instance2.AddCommand("loadscene", new DebugCommands.DebugCommand(DeviceConsole.OnLoadSceneCommand), "Load scene by name or build id", "<scene_name> or <id>", false);
+		instance2.AddCommand("resetach21", new DebugCommands.DebugCommand(this.OnResetAchievement21Command), "Reset 21 achievement progress", string.Empty, false);
+		instance2.AddCommand("quit", new DebugCommands.DebugCommand(DeviceConsole.OnQuitCommand), "Closes the app", string.Empty, false);
 	}
 
 	public void SetVisible(bool visible)
@@ -125,11 +126,20 @@ public class DeviceConsole : Singleton<DeviceConsole>
 
 		string[] array = text.Split(' ');
 
-		UnityEngine.Debug.Log(string.Format("$ {0}", text));
-
 		if (this.currentOnCommandEvent != null)
 			this.currentOnCommandEvent(this, new DeviceConsole.OnCommandEventArgs(array));
+		
+		// Log input/output of command
+		LogType prevLog = UnityEngine.Debug.unityLogger.filterLogType;
+		UnityEngine.Debug.unityLogger.filterLogType = LogType.Log;
+
+		UnityEngine.Debug.Log(string.Format("$ {0}", text));
+
 		DebugCommands.Instance.ExecuteCommand(array);
+
+		// If (legit) logall, don't reset prevLog status, the line above already set it for us.
+		if (array[0].ToLower() != "logall" || array.Length <= 1 || !DeviceConsole.TrueOrFalse(array[1], out bool ok))
+			UnityEngine.Debug.unityLogger.filterLogType = prevLog;
 
 		this.CommandHistoryIndex = DebugCommands.Instance.CommandHistory.Count;
 		
@@ -323,6 +333,37 @@ public class DeviceConsole : Singleton<DeviceConsole>
 		SceneManager.LoadScene(args[1]);
 	}
 
+	private static bool TrueOrFalse(string arg, out bool lol)
+	{
+		if (arg == "t" || arg.ToLower() == "true")
+		{
+			lol = true;
+		}
+		else if (arg == "f" || arg.ToLower() == "false")
+		{
+			lol = false;
+		}
+		else
+		{
+			return false;
+		}
+		return true;
+	}
+
+	private static void OnLogAllCommand(string[] args)
+	{
+		if (args.Length != 2)
+		{
+			UnityEngine.Debug.LogError("Please specify either t or f.");
+			return;
+		}
+		bool save;
+		if (TrueOrFalse(args[1], save))
+			Singleton<SaveSystem>.Instance.SetBool("console.logAll", out save);
+		else
+			UnityEngine.Debug.LogError("Please specify either t or f.");
+	}
+
 	private string ColorToString(Color32 color) => color.r.ToString("X2") + color.g.ToString("X2") + color.b.ToString("X2");
 
 	private void PreLogIDK()
@@ -372,15 +413,9 @@ public class DeviceConsole : Singleton<DeviceConsole>
 			return;
 		}
 
-		if (args[1] == "t" || args[1] == "true")
+		if (DeviceConsole.TrueOrFalse(args[1], out bool save))
 		{
-			this.autoFocusInputField = true;
-			return;
-		}
-
-		if (args[1] == "f" || args[1] == "false")
-		{
-			this.autoFocusInputField = false;
+			this.autoFocusInputField = save;
 			return;
 		}
 
