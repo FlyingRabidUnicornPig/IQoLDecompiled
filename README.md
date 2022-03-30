@@ -27,12 +27,18 @@ dnSpy does not save comments or extra white space, cannot access all the origina
 4. When do i make money from doing this?
 
 ### New Features for release
-- Fixed quickstart offline mode (hopefully)
+- Editor Performance increases
+ - Selecting objects is less taxing.
+ - Caret used extremely bad code, increased performance by 10-14% (jfc)
 - **Improved Console**
   - You can see what your commands are doing
   - Unlocked "cheat" and dev commands
   - New commands
     - `logAll < t | f >` set to true to see all logs, not just warnings or errors. This saves to your file as well.
+
+### Bug fixes
+- Vanilla: Background colors not being parsed correctly in editor or something idr
+- Mod: Fixed quickstart offline mode (hopefully)
 
 ### Bugs To Squash before release
 - Some sliders may start as float sliders when they should be integer sliders in editor. **Workaround** press apply and they will fix themselves.
