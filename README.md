@@ -24,7 +24,7 @@ dnSpy does not save comments or extra white space, cannot access all the origina
   - Improve code style for readability
 2. Prep for release, squash bugs, finish up cleanup, etc. Then upload new .dll to [IQoL](https://github.com/FlyingRabidUnicornPig/IntralismQoLMod)
 3. Keep this repo updated with each IQoL update for source control. Plan for missed files, a double-check should be done every month or two.
-4. When do i make money from doing this?
+4. When do i [make money](https://ko-fi.com/dustdust) from doing this?
 
 ### New Features for release
 - Editor Performance increases
