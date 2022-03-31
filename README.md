@@ -28,8 +28,8 @@ dnSpy does not save comments or extra white space, cannot access all the origina
 
 ### New Features for release
 - Editor Performance increases
- - Selecting objects is less taxing.
- - Caret used extremely bad code, increased performance by 10-14% (jfc)
+  - Selecting objects is less taxing.
+  - Caret used extremely bad code, increased performance by 10-14% (jfc)
 - **Improved Console**
   - You can see what your commands are doing
   - Unlocked "cheat" and dev commands
