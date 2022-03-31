@@ -477,34 +477,57 @@ public class GameScene : global::Scene
 	public override void Update()
 	{
 		base.Update();
+		// Game Over?
 		if (this.gameOver)
 		{
 			if (this.pbase.currentState == PlayerBase.PlayerState.Finished)
-			{
-				this.SetUpGameOverShit();
-			}
+				this.SetUpGameOverShit(); // Setup Gameover UI and lower the volume and/or pitch
+
 			if (this.AllPlayersFinished() && (this.pbase.currentState == PlayerBase.PlayerState.Spectator || this.spectatePanel.activeSelf))
 			{
-				this.OxyPls();
+				this.OxyPls(); // Turn off gameplay UI
 				this.pbase.currentState = PlayerBase.PlayerState.Finished;
 			}
 		}
+		// Gameplay
 		else if (this.isGameStarted)
 		{
+			// Press play on the music objects when we hit 0 seconds
 			if (!this.haveWeDoneFirstFrameShitYet && this.currentMusicTime > 0f)
-			{
 				this.FirstFrameShit();
-			}
+
 			if (this.currentMusicTime < this.calculatedmaptime && !this.IsRoundFinished())
 			{
 				this.currentMusicTime += Time.deltaTime;
 				this.UpdateUI();
-				if (hardInput.GetKeyDown("restart") && PhotonNetwork.offlineMode)
+				if (hardInput.GetKeyDown("restart") && PhotonNetwork.offlineMode) // There's like, 4 different ways of inputting in this game i hate oxy's programming!
+				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣌⣮⡷⠳⠳⠳⠳⢳⢻⢻⢻⢻⢻⢻⢻⢻⠳⡧⡦⡦⡦⣄⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                    
+				//		i hate oxy's programming!   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⠷⠁⠀⠀⣈⡬⠶⢛⣙⣌⡄⣄⣌⣌⢙⢙⢙⢹⢻⢪⢺⢻⢙⣝⢹⡳⣎⣂⠀⠀⠀⠀⠀⠀⠀                    
+				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⣼⠓⠀⠀ ⡾⣛⡮⢓⡝⡄⡦⠢⠢⢄⠀    ⠑⢙⢙⣝⢈⢈⠐⠀⠀⠱⣧⠀⠀⠀⠀⠀                    i hate oxy's programming!
+				//                                  ⠀⠀⠀⠀⠀⠀⠀⣼⠗⠀⠀ ⢁⡼⣓⣾⡅⠢⠈⠢⠈⠈⣔⢎⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⡣⠌⠀⠀⠐⣯⣂⠀⠀⠀⠀⠀                    
+				//                                  ⠀⠀⠀⠀⠀⠀⣨⠿⠀⠀⠀⠀⠐⣨⠗⠀⠁⠀⢈⠈⠈⡀⠖⠐⣣⠀⠀⠀⠀⢈⡤⠲⠗⠑⢑⠑⠣⣆⠈⣷⣂⠀⠀⠀⠀                    
+				//                                  ⠀⠀⠀⠀⢀⣾⢿⢈⢈⢈⠀⢀⣬⠏⡐⠀⠀⣾⣿⣿⣿⠎⠀⠴⠑⣣⠀⠀⣨⡃⠈⠀⢀⣬⣮⣌⠐⠀⠰⠜⣷⢎⠀⠀⠀           i hate oxy's programm!         
+				//                                  ⠀⠀⠀⣀⡿⡭⠓⢁⣌⡬⣮⢌⠘⣇⠀⡀⠄⠐⠳⠳⠓⠀⠠⠂⣪⠀⠀⡳⣿⠀⠀⠀⠰⣷⣿⡷⠀⡀⢢⢿⣂⡱⢏⠀⠀                    
+				//                                  ⠀⠀⢀⡿⣱⠁⣨⠷⠁⣀⠌⠱⡳⠆⠱⡧⣌⣬⢫⢈⢙⣙⡭⠶⠁⠀⠀⠀⣰⡫⣤⠈⠀⠌⠀⢀⢈⡌⣷⠔⠎⣃⣿⠀⠀                    
+				//                                  ⠀⠀⣰⠏⣰⠀⣿⠀⢈⠌⡷⣎⢌⠀⠀⠀⠀⠀⠑⠑⢁⣀⣌⠌⠀⠀⠀⠀⠰⣧⣎⠐⠑⠑⠑⠑⣡⠌⠀⠀⠏⣸⣿⠀⠀                    
+				//      i hate oxy's programming!   ⠀⠀⡰⣯⣰⠀⣿⠰⠳⠌⠌⠀⠱⡳⣮⣌   ⠑⠁⣿⠀⣌⣄⢌⠀⠀⠀⢀⡿⣄ ⠈⠀⠀⣸⣯⠀⠲⡈⣣⠟⠀⠀                    
+				//                                  ⠀⠀⠀⣳⢞⡃⢘⠀⠀⠐⣿⣎⢈⠀⣿⠑⠳⡳⣦⣌⢌⠸⠃⠁⠀⠑⠀⣄⣌⡾⠃⠀⠀⠐⢁⣬⣷⣿⠏⠓⣾⠀⠀⠀             i hate oxy's programming!       
+				//                                  ⠀⠀⠀⠀⡱⣎⠘⠀⠀⠀⣿⠀⣿⣯⣿⣯⢌⠀⠀⠐⣿⠳⡳⡦⣦⣌⣌⣌⣝⣌⣌⣌⣮⡾⠓⣣⠀⣿⠏⠀⣾⠀⠀⠀                    
+				//                                  ⠀⠀⠀⠀⠀⠰⣯⠈⠀⠀⣰⣿⠀⠀⠀⠀⠀⣿⣮⣬⢏⠈⠀⠀⠀⣿⠀⠀⠑⠟⠁⠀⠀⣯⢈⠀⣮⣿⣯⠀⠀⣿⠀⠀⠀⠀                    
+				//                                  ⠀⠀⠀⠀⠀⠀⠰⣏⠀⠀⡰⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣯⣮⣿⣮⣮⣮⣿⣮⣮⣿⣿⣿⣿⠀⠀⣿⠀⠀⣳⠀⠀⠀⠀                    
+				//                                  ⠀⠀⠀⠀⠀⠀⠀⡱⣏⠀⠀⣷⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⠀⣰⠀⠀⠀⠀                    
+				//        i hate oxy's programming! ⠀⠀⠀⠀⠀⠀⠀⠀⠱⣯⠌⠰⣏⠑⣳⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⣰⠀⠀⠀⠀                    
+				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⡳⣎⠰⣧⠈⣿⠱⡳⣷⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ ⣿⠀⣰⠌⠀⠀⠀  i hate oxy's programming!                  
+				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠱⣯⠘⡳⢏⠀⠀⠀⠐⣿⠳⡷⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⣰⠏⠀⠀⠀                    
+				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⣧⠌⠰⣧⢌⠀⣀⠟⠀⠀⠀⠑⣿⠳⠳⡷⣷⡿⡷⣿⡿⣷⡿⣳⠟⡿⠀⣰⠏⠀⠀⠀                    
+				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⡳⣎⠈⠐⡣⣷⢍⠈⠀⠀⠀⣿⠀⠀⠀⣾⠀⠀⣼⠁⣸⢋⣸⡿⠃⠀⣾⠁⠀⠀⠀                    
+				//       i hate oxy's programming! ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⡳⣎⢈⠀⠑⠳⡳⡧⣦⣿⣎⣌⣬⣿⡄⡄⡷⡶⡷⠳⠓⠁⠀⣸⠇⠀⠀⠀⠀                    
+				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠱⡷⣦⣎⣌⢈⢈⠈⠀⠀⠀⠀⠀⠀⢈⢈⢈⢈⣈⣌⡶⠓⠀⠀⠀⠀⠀                    
+				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠑⠱⠳⠳⠳⠳⠳⠳⠳⠳⠳⠳⠳⠑⠑⠀⠀⠀⠀⠀⠀⠀⠀                    
 				{
 					foreach (GameEventInfo gei in this.pbase.gameEventInfoList)
-					{
 						Singleton<GameManager>.Instance.GameEvent(gei);
-					}
+
 					this.pbase.gameEventInfoList.Clear();
 					this.OnRestartButton(true);
 				}
