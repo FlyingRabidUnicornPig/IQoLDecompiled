@@ -335,19 +335,8 @@ public class DeviceConsole : Singleton<DeviceConsole>
 
 	private static bool TrueOrFalse(string arg, out bool lol)
 	{
-		if (arg == "t" || arg.ToLower() == "true")
-		{
-			lol = true;
-		}
-		else if (arg == "f" || arg.ToLower() == "false")
-		{
-			lol = false;
-		}
-		else
-		{
-			return false;
-		}
-		return true;
+		lol = arg == "t" || arg.ToLower() == "true";
+		return lol || arg == "f" || arg.ToLower() == "false";
 	}
 
 	private static void OnLogAllCommand(string[] args)
@@ -357,6 +346,7 @@ public class DeviceConsole : Singleton<DeviceConsole>
 			UnityEngine.Debug.LogError("Please specify either t or f.");
 			return;
 		}
+
 		bool save;
 		if (TrueOrFalse(args[1], save))
 			Singleton<SaveSystem>.Instance.SetBool("console.logAll", out save);
