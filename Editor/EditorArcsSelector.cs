@@ -11,23 +11,27 @@ using UnityEngine.EventSystems;
 
 public class EditorArcsSelector : Singleton<EditorArcsSelector>
 {
+	// CTRL, add arcs
+	// Alt, remove arcs
+	// Bug: Need to do CTRL+ALT to selectionbox-remove arcs, instead of just ALT.
 	private bool IsAltPressed       => Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
 	private bool IsControlPressed   => Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
 	private bool IsModButtonPressed => IsAltPressed || IsControlPressed;
 
 	private void Update()
 	{
-		bool mouseRelease = Input.GetMouseButtonUp(0);
-		bool isPointerOverObject = !mouseRelease && EventSystem.current.IsPointerOverGameObject();
-		bool didNotClickObject = !mouseRelease && Input.GetMouseButtonDown(0) && !isPointerOverObject;
-		bool raycastHit = mouseRelease || didNotClickObject 
+		bool mouseClickThisFrame = Input.GetMouseButtonDown(0);
+		bool raycastHit = Input.GetMouseButtonDown(0)
 			? Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out this.AreYouWinningSon, 100f, this.arcsLayerMask)
-			: false;
+			: false;		
 		EditorEvent hoveredEvent = !raycastHit ? null : AreYouWinningSon.transform.gameObject.GetComponentInParent<EditorEvent>();
 
 		this.MousePositionInWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-		if (didNotClickObject)
+		if (mouseClickThisFrame)
 		{
+			this.WorldPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+			// Find out if we should select or drag objects
 			if (!this.IsSelecting)
 			{
 				// If we didn't click on a selected object, start selecting
@@ -37,8 +41,8 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 					this.selectionBoxPanel.sizeDelta = new Vector2(0f, 0f);
 					this.ResetSelectionBoxAnimation();
 				}
-				// If we click on an already selected object, start dragging wait shouldn't this be impossible? (it is if you do hoveredEvent != null at start /shrug)
-				else if (hoveredEvent.IsSelected && !IsModButtonPressed)
+				// If we click on an already selected object, start dragging selection
+				else if (hoveredEvent.IsSelected && !this.IsAltPressed)
 				{
 					this.IsDraggingObj = true;
 
@@ -47,24 +51,38 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 				}
 			}
 
-			this.WorldPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-			// if not dragging (only clicking)
+			// If not dragging
 			if (!this.IsDraggingObj)
 			{
-				// We need to get rid of this garbage. Why are we removing every event and reselecting them every frame fucking garbage
-				if (!IsControlPressed)
+				// If alt or control is not pressed, remove all selected arcs
+				// ALT WON'T WORK AND I HAVE NO CLUE WHY HAHAHAHAHAHAHAHAHAHHAHAHAHAHAH
+				// YOU CAN EVEN DO (!IsControlPressed && !IsAltPressed) AND IT STILL WON'T WORK
+				// I TRIED STORING GETKEY IN A LOCAL VARIABLE TOO HAHAHAHAHAHAH
+				// WHAT IS GOING ON
+				// At least you can still deselect arcs with alt+ctrl even tho idk how that works...
+				if (!IsModButtonPressed)
 					ResetCurrentSelection();
 
-				// If not pressing alt, add the most recent collider to the selected units
-				if (raycastHit && !IsAltPressed)
+				if (raycastHit)
 				{
-					hoveredEvent.IsSelected = true;
-					this.selectedunits.Add(hoveredEvent.gameObject);
+					// If pressing alt, remove object from selected units
+					if (!this.IsAltPressed)
+					{
+						hoveredEvent.IsSelected = true;
+						this.selectedunits.Add(hoveredEvent.gameObject);
+					}
+					// If not pressing alt, add object to selected units
+					else if (this.selectedunits.Contains(hoveredEvent.gameObject))
+					{
+						hoveredEvent.IsSelected = false;
+						this.selectedunits.Remove(hoveredEvent.gameObject);
+					}
 				}
 			}
 		}
-		// Else if the frame we release the mouse
-		else if (mouseRelease)
+
+		// If the frame we release the mouse
+		if (Input.GetMouseButtonUp(0))
 		{
 			// If we were drag-selecting arcs, add them to selected units list
 			if (this.IsSelecting)
@@ -72,13 +90,6 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 				this.PutUnitsFromDragIntoSelectedUnits();
 				this.IsSelecting = false;
 				ResetSelectionBoxAnimation();
-			}
-
-			// If pressing alt, unselect hovered event
-			if (IsAltPressed && raycastHit && this.selectedunits.Contains(hoveredEvent.gameObject))
-			{
-				this.selectedunits.Remove(hoveredEvent.gameObject);
-				hoveredEvent.IsSelected = false;
 			}
 
 			// If dragging, stop dragging
@@ -94,8 +105,9 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 				Singleton<EditorHistoryHandler>.Instance.SaveState("Events Moved", false);
 			}
 		}
+
 		// If we're selecting, figure out bounds of box
-		else if (this.IsSelecting && !this.IsDraggingObj)
+		if (this.IsSelecting && !this.IsDraggingObj)
 			FigureOutBoundsOfSelectionBox();
 		
 		// Draw the box *this frame* (was on a single frame delay before by being first line of this method)
@@ -229,6 +241,18 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 
 		this.UnitInDrag.Clear();
 	}
+	
+	public void RemoveUnitsFromDragFromSelectedUnits()
+{
+	for (int i = 0; i < this.UnitInDrag.Count; i++)
+	{
+		if (this.selectedunits.Contains(this.UnitInDrag[i]))
+		{
+			this.selectedunits.Remove(this.UnitInDrag[i]);
+		}
+	}
+	this.UnitInDrag.Clear();
+}
 
 	public void SaveSelectedToMemory()
 	{
