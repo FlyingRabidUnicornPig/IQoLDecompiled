@@ -42,7 +42,7 @@ dnSpy does not save comments or extra white space, cannot access all the origina
 ### Bug fixes
 - Vanilla: Background colors not being parsed correctly in editor or something idr
 - Vanilla: Can record highscores on first attempt again (oxy was checking for something only hackers could do cool)
-- Mod: Fixed quickstart offline mode (hopefully)
+- Mod: "Fixed" quickstart offline mode
 
 ### Bugs To Squash before release
 - Some sliders may start as float sliders when they should be integer sliders in editor. **Workaround** press apply and they will fix themselves.
