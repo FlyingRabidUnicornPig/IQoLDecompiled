@@ -43,4 +43,4 @@ dnSpy does not save comments or extra white space, cannot access all the origina
 
 ### Bugs To Squash before release
 - Some sliders may start as float sliders when they should be integer sliders in editor. **Workaround** press apply and they will fix themselves.
-- Editor selector (drag-n-select) will have a drastically inappropriate window for the first frame sometimes, selecting arcs you didn't want to (Extremely bothersome when `ctrl`+selecting). Happens when zoom or time changes since last select. Seems to use the same screen space as the last select. (Maybe reset values after a select-end?) **No Workaround**
+- Vanilla Bug-Feature: CTRL+ALT is the only way to drag-deselect, would rather this was ALT only, Unity being a bitch and misreading alt when I try that...
