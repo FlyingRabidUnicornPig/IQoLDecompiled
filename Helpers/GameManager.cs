@@ -104,14 +104,12 @@ public class GameManager : Singleton<GameManager>
 	private bool verified;
 	public void OnUserVerified(bool offlineMode = false)
 	{
-		if (verified && !offlineMode) return; // HACK: Allow offline mode to always go through, causes
+		if (verified && !offlineMode) return; // HACK: Allow offline mode to always go through
 		                                      // BUG : Can get into a semi-offline state,
 		                                      //       where intralism stuff won't work, official, loved, funny maps, etc.
 											  //       but steam stuff will, rank submission, workshop maps
-											  
-											  // TODO: Make sure this does work when connection to Intralism is flakey, I think it does now, but should double check.
-										      //       todo: put this comment on the MenuScene if statement, not here.
-											  //       Confirmed does not work when connection to Intralism is flakey, too long to respond errors aren't fixed by this
+											  // BUG : Does not work when connection to Intralism is flakey,
+											  //       specifically "too long to respond" issues don't work with quick-offline
 		verified = true;
 
 		GameManager.IsOffline = offlineMode;
@@ -120,7 +118,7 @@ public class GameManager : Singleton<GameManager>
 			SteamUserStats.RequestCurrentStats();
 
 		Singleton<SaveSystem>.Instance.Init(Helpers.Md5Sum("Data" + SteamUser.GetSteamID().m_SteamID).ToUpper());
-		// Are we going to see all messages or just warnings/errors
+		// Do we see all messages or just warnings/errors
 		UnityEngine.Debug.unityLogger.filterLogType =
 			(Singleton<SaveSystem>.Instance.GetBool("console.logAll", false, null) ? LogType.Log : LogType.Warning);
 		// Clear log if we don't want to see everything
@@ -135,8 +133,8 @@ public class GameManager : Singleton<GameManager>
 	public void StartOfflineMessage()
 	{
 		// Don't interrupt the user if they're in console typing "loadscene" or similar
-		// TODO: Editor doesn't like being opened before things are initialized, i assume other things as well.
-		//       Recommended to start offline mode first, then do "loadscene" or other commands
+		// TODO: Editor doesn't like being opened before things are initialized, i assume other things also mildly break.
+		//       Workaround: Start offline mode first, then do "loadscene" or other commands
 		if (Singleton<DeviceConsole>.Instance.IsVisible()) return;
 
 		Singleton<Scene>.Instance.ShowCursor(true);
@@ -187,12 +185,6 @@ public class GameManager : Singleton<GameManager>
 	private bool whoTheHellIsSteveJobs; // unused
 
 	public GameManager.GameState currentState;
-
-
-	public delegate void FinishedMapEvent(FinishedMapInfo DAGALCAILLN);
-
-	public delegate void PlayerGameEvent(GameEventInfo DAGALCAILLN);
-
 	public enum GameState
 	{
 		Init,
@@ -203,11 +195,13 @@ public class GameManager : Singleton<GameManager>
 		Editor
 	}
 
-	// Can we throw this repeated code into an event or something? I'm not sure i'm not familiar with event shit
+	public delegate void FinishedMapEvent(FinishedMapInfo fmi);
+	public delegate void PlayerGameEvent(GameEventInfo gei);
+
 	[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 	[CompilerGenerated]
 	private GameManager.FinishedMapEvent onFinishedMap;
-
+	
 	[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 	[CompilerGenerated]
 	private GameManager.PlayerGameEvent onGameEvent;

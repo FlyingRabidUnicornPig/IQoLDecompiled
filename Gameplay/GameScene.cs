@@ -34,7 +34,7 @@ public class GameScene : global::Scene
 		}
 
 		// Remove score but not accuracy for PlayTest mode
-		// Encourage getting well timed arcs or good patterns rather than a high score map
+		// Encourage getting well timed patterns rather than playing for high score
 		// Also a way to signal to users "This is a different mode than others"
 		if (this.gameMode == GameScene.GameMode.PlayTest)
 		{
@@ -86,7 +86,7 @@ public class GameScene : global::Scene
 		}
 		catch (Exception e)
 		{
-			Debug.LogWarning("Error while reseting loading bar:\n" + e.message);
+			UnityEngine.Debug.LogWarning("Error while reseting loading bar:\n" + e.Message);
 		}
 
 		// Score Text
@@ -97,7 +97,7 @@ public class GameScene : global::Scene
 		}
 		catch (Exception e)
 		{
-			Debug.LogWarning("Error while reseting score text:\n" + e.message);
+			UnityEngine.Debug.LogWarning("Error while reseting score text:\n" + e.Message);
 		}
 
 		// HP/Accuracy Text
@@ -111,7 +111,7 @@ public class GameScene : global::Scene
 		}
 		catch (Exception e)
 		{
-			Debug.LogWarning("Error while reseting HP and Acc text:\n" + e.message);
+			UnityEngine.Debug.LogWarning("Error while reseting HP and Acc text:\n" + e.Message);
 		}
 
 		// Combo Text
@@ -122,7 +122,7 @@ public class GameScene : global::Scene
 		}
 		catch (Exception e)
 		{
-			Debug.LogWarning("Error while reseting combo text:\n" + e.message);
+			UnityEngine.Debug.LogWarning("Error while reseting combo text:\n" + e.Message);
 		}
 
 		base.ShowCursor(false);
