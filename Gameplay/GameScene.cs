@@ -17,10 +17,14 @@ public class GameScene : global::Scene
 {
 	public void OnStartRound()
 	{
+		// Highscore
 		this.ingameUICanvas.transform.FindDeepChild("BestScoreText").GetComponent<Text>().text = this.highScore + ": " + this.pbase.lastBestScore;
+		
+		// stop loading, start game
 		this.loadingCanvas.SetActive(false);
 		this.ingameUICanvas.SetActive(true);
 
+		// In relax mode, remove scoring UI elements
 		if (this.gameMode == GameScene.GameMode.Relax)
 		{
 			this.ingameUICanvas.transform.FindDeepChild("BestScoreText").gameObject.SetActive(false);
@@ -29,7 +33,7 @@ public class GameScene : global::Scene
 			this.comboTextGO.gameObject.SetActive(false);
 		}
 
-		// Remove score but not accuracy from PlayTest
+		// Remove score but not accuracy for PlayTest mode
 		// Encourage getting well timed arcs or good patterns rather than a high score map
 		// Also a way to signal to users "This is a different mode than others"
 		if (this.gameMode == GameScene.GameMode.PlayTest)
@@ -38,20 +42,21 @@ public class GameScene : global::Scene
 			this.scoreText.gameObject.SetActive(false);
 		}
 
+		// If in mutliplayer hide the chat
 		if (!PhotonNetwork.offlineMode)
 			Singleton<MultiplayerSystem>.Instance.HideChat();
 	}
 
 	public void Reset()
 	{
-		// Should we "reset" volume? when it should stay to user setting?
+		// Audio volume/pitch, used for game over effects
 		foreach (AudioSource audioSource in this.asampler.audioSources)
 		{
 			audioSource.pitch = 1f;
 			audioSource.volume = 1f;
 		}
 
-		// Multiplayer? is that why there could be more?
+		// Remove all player bases
 		PlayerBase[] array = UnityEngine.Object.FindObjectsOfType<PlayerBase>();
 		for (int i = 0; i < array.Length; i++)
 			UnityEngine.Object.DestroyImmediate(array[i].gameObject);
@@ -79,7 +84,10 @@ public class GameScene : global::Scene
 			this.levelProgressBar.transform.Find("Fill Area").Find("Fill").GetComponent<Image>().color = new Color(0.654902f, 0.8784314f, 0.9843137f);
 			this.levelProgressBar.GetComponent<Slider>().value = 0f;
 		}
-		catch (Exception) { }
+		catch (Exception e)
+		{
+			Debug.LogWarning("Error while reseting loading bar:\n" + e.message);
+		}
 
 		// Score Text
 		try
@@ -87,7 +95,10 @@ public class GameScene : global::Scene
 			this.scoreText = this.ingameUICanvas.transform.FindDeepChild("ScoreText").GetComponent<Text>();
 			this.scoreText.text = LocalizationService.Instance.GetLocalizatedText("#score").ToUpper() + ": " + 0;
 		}
-		catch (Exception) { }
+		catch (Exception e)
+		{
+			Debug.LogWarning("Error while reseting score text:\n" + e.message);
+		}
 
 		// HP/Accuracy Text
 		try
@@ -98,7 +109,10 @@ public class GameScene : global::Scene
 			this.HPTextnAcc.horizontalOverflow = HorizontalWrapMode.Overflow;
 			this.HPTextnAcc.verticalOverflow = VerticalWrapMode.Overflow;
 		}
-		catch (Exception) { }
+		catch (Exception e)
+		{
+			Debug.LogWarning("Error while reseting HP and Acc text:\n" + e.message);
+		}
 
 		// Combo Text
 		try
@@ -106,7 +120,10 @@ public class GameScene : global::Scene
 			this.comboTextGO = this.ingameUICanvas.transform.FindDeepChild("ComboText").GetComponent<Text>();
 			this.comboTextGO.text = LocalizationService.Instance.GetLocalizatedText("#combo").ToUpper() + ": " + 0;
 		}
-		catch (Exception) { }
+		catch (Exception e)
+		{
+			Debug.LogWarning("Error while reseting combo text:\n" + e.message);
+		}
 
 		base.ShowCursor(false);
 	}
@@ -168,7 +185,7 @@ public class GameScene : global::Scene
 				sprite = ResourcesManager.GetLoadedAvatar(csteamID);
 		}
 
-		GameObject spectatingInfo = GameObject.Find("SpectatingUserInfo"); // If we have to use Find, try to call it as little as possible
+		GameObject spectatingInfo = GameObject.Find("SpectatingUserInfo");
 		spectatingInfo.transform.Find("UsernameText").GetComponent<Text>().text = ResourcesManager.GetLoadedSteamPlayernameWithColoredRank(csteamID, true);
 		spectatingInfo.transform.Find("AvatarImage").GetComponent<Image>().sprite = sprite;
 
@@ -183,16 +200,21 @@ public class GameScene : global::Scene
 
 	public void ShowGameOverScreen(bool showCanvas = false)
 	{
+		// Switch canvases
 		this.gameOverCanvas.SetActive(showCanvas);
 		this.spectatePanel.SetActive(!this.AllPlayersFinished());
 
+
 		if (this.AllPlayersFinished())
 		{
+			// Add "reset from checkpoint" button
 			bool resetFromCheckpoint = !this.pbase.isPlayerWon && this.pbase.CanResumeFromCheckpoint();
 			this.restartCheckpointPanel.SetActive(resetFromCheckpoint);
 			this.restartNoCheckpointPanel.SetActive(!resetFromCheckpoint);
 			
 			base.ShowCursor(true);
+			
+			// Did you win a multiplayer match?
 			if (!PhotonNetwork.offlineMode && PhotonNetwork.room.PlayerCount > 1 && base.GetComponent<NetworkScene>().firstPlayer.player == PhotonNetwork.player)
 				Helpers.ObtainAchievement(17);
 		}
@@ -200,10 +222,12 @@ public class GameScene : global::Scene
 		for (int i = 0; i < this.levelInfoContent.transform.childCount; i++)
 			UnityEngine.Object.Destroy(this.levelInfoContent.transform.GetChild(i).gameObject);
 
+		// Set up the map icon on the right I think?
 		FullMapData mapData = Singleton<MapsSystem>.Instance.GetMapData(this.mapID);
 		
 		GameObject mapIcon = Singleton<MapsSystem>.Instance.AddDownloadedLevelItemToList(this.levelInfo, mapData, this.levelInfoContent);
 		mapIcon.GetComponent<LevelsListElementButton>().launchLevelMode = -1;
+
 		if (mapData.source == FullMapData.MapSource.Workshop && Singleton<MapsSystem>.Instance.GetUserVote(ulong.Parse(mapData.workshopId)) == 0)
 			mapIcon.GetComponent<LevelsListElementButton>().ToggleRate();
 	}
@@ -216,12 +240,18 @@ public class GameScene : global::Scene
 			yield break;
 
 		this.messageCanvas.GetComponentInChildren<Text>().text = message;
-		this.messageAnimation.GetComponent<EasyTween>().SetAnimatioDuration((howLong >= 1f) ? 1f : (howLong / 4f)); // Max fade time of 1 second
-		                                                                                                            // Otherwise 1/4th of time
-		this.messageAnimation.GetComponent<EasyTween>().OpenCloseObjectAnimation(); // Open for fade time
-		yield return new WaitForSeconds(howLong); // Wait for time
-		this.messageAnimation.GetComponent<EasyTween>().OpenCloseObjectAnimation(); // Close for fade time
-		yield return new WaitForSeconds((howLong >= 1f) ? 1f : (howLong / 4f)); // wait for fade time before showing another message
+
+		// Max fade time of 1 second, otherwise 1/4th of howLong
+		this.messageAnimation.GetComponent<EasyTween>().SetAnimatioDuration((howLong >= 1f) ? 1f : (howLong / 4f));
+
+		// Open over fade-time
+		this.messageAnimation.GetComponent<EasyTween>().OpenCloseObjectAnimation();
+		// Wait for howLong
+		yield return new WaitForSeconds(howLong);
+		// Close over fade-time
+		this.messageAnimation.GetComponent<EasyTween>().OpenCloseObjectAnimation();
+		// wait for fade time before showing another message
+		yield return new WaitForSeconds((howLong >= 1f) ? 1f : (howLong / 4f));
 		yield break;
 	}
 
@@ -243,22 +273,14 @@ public class GameScene : global::Scene
 		yield break;
 	}
 
-	public void ShowResult(string result = "")
+	private void HandleMultiplayerStuff()
 	{
-		this.gameOver = true;
-
 		if (!PhotonNetwork.offlineMode)
 			Singleton<MultiplayerSystem>.Instance.ShowChat();
 
 		base.GetComponent<NetworkScene>().UpdateScoreboard();
 
-		if (this.AllPlayersFinished())
-			this.currentMusicTime = this.calculatedmaptime;
-
-		if (string.IsNullOrEmpty(result))
-			this.levelProgressBar.transform.Find("Fill Area").Find("Fill").GetComponent<Image>().color = Color.red;
-
-		// "I'm done"
+		// Saying "I'm done"
 		if (PhotonNetwork.inRoom && !PhotonNetwork.offlineMode && result != "CompletedLevel") // Not sure how you can be in a room and not online mode, testing?
 		{
 			base.GetComponent<NetworkScene>().photonView.RPC("OnPlayerGameMessage", PhotonTargets.Others, new object[]
@@ -267,6 +289,34 @@ public class GameScene : global::Scene
 				"Finished"
 			});
 		}
+	}
+
+	private void ObtainAchievements()
+	{
+		// Multiplayer achievements
+		if (!PhotonNetwork.offlineMode)
+		{
+			// Orgy
+			if (PhotonNetwork.room.PlayerCount >= 2)
+				Helpers.ObtainAchievement(18);
+			// Fap
+			if (PhotonNetwork.room.PlayerCount == 1)
+				Helpers.ObtainAchievement(19);
+		}
+	}
+
+	public void ShowResult(string result = "")
+	{
+		this.gameOver = true;
+
+		HandleMultiplayerStuff();
+		ObtainAchievements();
+
+		if (this.AllPlayersFinished())
+			this.currentMusicTime = this.calculatedmaptime;
+
+		if (string.IsNullOrEmpty(result))
+			this.levelProgressBar.transform.Find("Fill Area").Find("Fill").GetComponent<Image>().color = Color.red;
 
 		// Complete level
 		if (result == "CompletedLevel")
@@ -275,21 +325,13 @@ public class GameScene : global::Scene
 			this.pbase.isPlayerWon = true;
 		}
 
-		// Multiplayer achievements (loner or with someone else)
-		if (!PhotonNetwork.offlineMode)
-		{
-			if (PhotonNetwork.room.PlayerCount >= 2)
-				Helpers.ObtainAchievement(18);
-			if (PhotonNetwork.room.PlayerCount == 1)
-				Helpers.ObtainAchievement(19);
-		}
-
+		// Got highscore?
 		if (this.gameMode != GameScene.GameMode.Relax && this.pbase.GetCurrentScore() > this.pbase.lastBestScore && !this.pbase.scoreBeated)
 			base.StartCoroutine(this.NewHighScoreMeme());
 
 		FullMapData mapData = Singleton<MapsSystem>.Instance.GetMapData(this.mapID);
 
-		// Submit score and replay
+		// Submit score and "replay" to server
 		this.pbase.StopReplayRecording();
 		if (Singleton<SaveSystem>.Instance.GetInt("settings.enableranking", 1, null) == 1 &&
 			this.gameMode != GameScene.GameMode.Relax &&
@@ -305,11 +347,12 @@ public class GameScene : global::Scene
 
 		Singleton<ItemsHandler>.Instance.UpdatePlayerInventory();
 
+		// Add 1 to playcount of this map
 		string timesPlayedSave = "maps." + Singleton<MapsSystem>.Instance.GetMapID(mapData) + ".played";
 		Helpers.AddToStat(timesPlayedSave, 1);
 
 		FinishedMapInfo finishedMapInfo = new FinishedMapInfo();
-		RanksSystem.Map oxyJustStoreIntoVariablesItsOkFuck = RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => "workshop." + x.id == this.mapID);
+		RanksSystem.Map map = RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => "workshop." + x.id == this.mapID);
 		try
 		{
 			finishedMapInfo.completed = this.pbase.isMapCompleted;
@@ -319,12 +362,12 @@ public class GameScene : global::Scene
 
 			finishedMapInfo.loopscount = this.pbase.loopsCount;
 
-			if (oxyJustStoreIntoVariablesItsOkFuck != null)
+			if (map != null)
 			{
-				finishedMapInfo.isofficial = oxyJustStoreIntoVariablesItsOkFuck.isOfficial;
-				finishedMapInfo.isloved = oxyJustStoreIntoVariablesItsOkFuck.isLoved;
-				finishedMapInfo.isfunny = oxyJustStoreIntoVariablesItsOkFuck.isFunny;
-				finishedMapInfo.mapdifficulty = oxyJustStoreIntoVariablesItsOkFuck.difficulty;
+				finishedMapInfo.isofficial = map.isOfficial;
+				finishedMapInfo.isloved = map.isLoved;
+				finishedMapInfo.isfunny = map.isFunny;
+				finishedMapInfo.mapdifficulty = map.difficulty;
 			}
 			else
 			{
@@ -370,15 +413,15 @@ public class GameScene : global::Scene
 			{
 				Helpers.ObtainAchievement(15);
 
-				// Play Multiplayer? lol 2fer
+				// Play non official map in multiplayer
 				if (mapData.source == FullMapData.MapSource.Workshop)
 					Helpers.ObtainAchievement(16);
 			}
 
 			// Played 10 official maps achievement (Broken?)
 			if (Singleton<SaveSystem>.Instance.GetInt("achievements.21.progress", 0) < 10 &&
-			    oxyJustStoreIntoVariablesItsOkFuck != null &&
-				!Singleton<SaveSystem>.Instance.GetBool("achievements.21.completed." + this.mapID, true)) // true to cancel "!"
+			    map != null &&
+				!Singleton<SaveSystem>.Instance.GetBool("achievements.21.completed." + this.mapID, true)) // true to cancel our "!"
 			{
 				Singleton<SaveSystem>.Instance.SetBool("achievements.21.completed." + this.mapID, true, null);
 				Helpers.AddToStat("achievements.21.progress", 1);
@@ -392,7 +435,7 @@ public class GameScene : global::Scene
 			this.pbase.DeletePlayerCheckpointData();
 
 			// 90% or better achievement
-			if (this.pbase.accuracyScore >= 0.9f && mapData.source == FullMapData.MapSource.Workshop && oxyJustStoreIntoVariablesItsOkFuck != null)
+			if (this.pbase.accuracyScore >= 0.9f && mapData.source == FullMapData.MapSource.Workshop && map != null)
 				Helpers.ObtainAchievement(22);
 		}
 
@@ -403,7 +446,7 @@ public class GameScene : global::Scene
 			SteamUserStats.IndicateAchievementProgress("NEW_ACHIEVEMENT_1_26", (uint)Helpers.GetStat("achievements.26.progress"), 5U);
 
 			// Perfect relax game achievement
-			if (oxyJustStoreIntoVariablesItsOkFuck != null && this.pbase.incorrectScore == 0)
+			if (map != null && this.pbase.incorrectScore == 0)
 				Helpers.ObtainAchievement(27);
 		}
 

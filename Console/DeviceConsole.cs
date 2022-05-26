@@ -111,6 +111,11 @@ public class DeviceConsole : Singleton<DeviceConsole>
 		if (visible)
 			this.ActivateConsole();
 	}
+	
+	public bool IsVisible()
+	{
+		return this.uiContainer.active;
+	}
 
 	public void OnEndEdit()
 	{

@@ -111,6 +111,7 @@ public class GameManager : Singleton<GameManager>
 											  
 											  // TODO: Make sure this does work when connection to Intralism is flakey, I think it does now, but should double check.
 										      //       todo: put this comment on the MenuScene if statement, not here.
+											  //       Confirmed does not work when connection to Intralism is flakey, too long to respond errors aren't fixed by this
 		verified = true;
 
 		GameManager.IsOffline = offlineMode;
@@ -133,6 +134,11 @@ public class GameManager : Singleton<GameManager>
 
 	public void StartOfflineMessage()
 	{
+		// Don't interrupt the user if they're in console typing "loadscene" or similar
+		// TODO: Editor doesn't like being opened before things are initialized, i assume other things as well.
+		//       Recommended to start offline mode first, then do "loadscene" or other commands
+		if (Singleton<DeviceConsole>.Instance.IsVisible()) return;
+
 		Singleton<Scene>.Instance.ShowCursor(true);
 		base.StartCoroutine(
 			Singleton<MessageBoxPanel>.Instance.DisplayDialog(
