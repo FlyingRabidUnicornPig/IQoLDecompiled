@@ -29,8 +29,6 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 		this.MousePositionInWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 		if (mouseClickThisFrame)
 		{
-			this.WorldPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-
 			// Find out if we should select or drag objects
 			if (!this.IsSelecting)
 			{
@@ -51,6 +49,11 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 				}
 			}
 
+			// THIS MUST COME AFTER THE !this.IsSelecting BLOCK
+			// Moving before will cause left-to-right selection not to work, and for some events to be "skipped" over
+			// Don't know if this can be moved elsehwere, just don't touch it for now lol
+			this.WorldPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
 			// If not dragging
 			if (!this.IsDraggingObj)
 			{
@@ -59,7 +62,7 @@ public class EditorArcsSelector : Singleton<EditorArcsSelector>
 				// YOU CAN EVEN DO (!IsControlPressed && !IsAltPressed) AND IT STILL WON'T WORK
 				// I TRIED STORING GETKEY IN A LOCAL VARIABLE TOO HAHAHAHAHAHAH
 				// WHAT IS GOING ON
-				// At least you can still deselect arcs with alt+ctrl even tho idk how that works...
+				// At least you can still deselect arcs with alt+ctrl even tho idk why that works...
 				if (!IsModButtonPressed)
 					ResetCurrentSelection();
 
