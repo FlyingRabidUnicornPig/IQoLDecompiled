@@ -17,8 +17,10 @@ public class GameScene : global::Scene
 {
 	public void OnStartRound()
 	{
+		Transform bestScoreText = this.ingameUICanvas.transform.FindDeepChild("BestScoreText");
+
 		// Highscore
-		this.ingameUICanvas.transform.FindDeepChild("BestScoreText").GetComponent<Text>().text = this.highScore + ": " + this.pbase.lastBestScore;
+		bestScoreText.GetComponent<Text>().text = this.highScore + ": " + this.pbase.lastBestScore;
 		
 		// stop loading, start game
 		this.loadingCanvas.SetActive(false);
@@ -27,7 +29,7 @@ public class GameScene : global::Scene
 		// In relax mode, remove scoring UI elements
 		if (this.gameMode == GameScene.GameMode.Relax)
 		{
-			this.ingameUICanvas.transform.FindDeepChild("BestScoreText").gameObject.SetActive(false);
+			bestScoreText.gameObject.SetActive(false);
 			this.scoreText.gameObject.SetActive(false);
 			this.HPTextnAcc.gameObject.SetActive(false);
 			this.comboTextGO.gameObject.SetActive(false);
@@ -38,7 +40,7 @@ public class GameScene : global::Scene
 		// Also a way to signal to users "This is a different mode than others"
 		if (this.gameMode == GameScene.GameMode.PlayTest)
 		{
-			this.ingameUICanvas.transform.FindDeepChild("BestScoreText").gameObject.SetActive(false);
+			bestScoreText.gameObject.SetActive(false);
 			this.scoreText.gameObject.SetActive(false);
 		}
 
@@ -69,13 +71,17 @@ public class GameScene : global::Scene
 		this.restartCheckpointPanel.SetActive(false);
 		this.restartNoCheckpointPanel.SetActive(false);
 
+
 		// bools
 		this.gameOver = false;
+		this.gameOverSetUp = false;
 		this.isGameStarted = false;
 		this.calculatedmaptime = 0f;
 		this.asampler.isMuted = false;
 		this.asampler.isInited = false;
 		this.haveWeDoneFirstFrameShitYet = false;
+		
+		this.ingameUICanvas.transform.FindDeepChild("Fill").GetComponent<Image>().color = new Color(0.654902f, 0.8784314f, 0.9843137f);
 
 		// Level Progress Bar
 		try
@@ -204,7 +210,6 @@ public class GameScene : global::Scene
 		this.gameOverCanvas.SetActive(showCanvas);
 		this.spectatePanel.SetActive(!this.AllPlayersFinished());
 
-
 		if (this.AllPlayersFinished())
 		{
 			// Add "reset from checkpoint" button
@@ -273,7 +278,7 @@ public class GameScene : global::Scene
 		yield break;
 	}
 
-	private void HandleMultiplayerStuff()
+	private void HandleMultiplayerStuff(string result)
 	{
 		if (!PhotonNetwork.offlineMode)
 			Singleton<MultiplayerSystem>.Instance.ShowChat();
@@ -291,68 +296,69 @@ public class GameScene : global::Scene
 		}
 	}
 
-	private void ObtainAchievements()
+	private void ObtainAchievementsAndLevelUp(RanksSystem.Map map, FullMapData mapData)
 	{
+		bool proGamer = this.gameMode != GameScene.GameMode.Relax && this.pbase.isPlayerWon;
+		bool mapExists = map != null;
+
 		// Multiplayer achievements
 		if (!PhotonNetwork.offlineMode)
 		{
-			// Orgy
+			// Orgy?
 			if (PhotonNetwork.room.PlayerCount >= 2)
 				Helpers.ObtainAchievement(18);
-			// Fap
+			// Fap?
 			if (PhotonNetwork.room.PlayerCount == 1)
 				Helpers.ObtainAchievement(19);
+			
+			// Play workshop map in multiplayer
+			if (mapData.source == FullMapData.MapSource.Workshop)
+				Helpers.ObtainAchievement(16);
+
+			if (proGamer)
+			{
+				// Are you winning son?
+				Helpers.ObtainAchievement(15);
+			}
+		}
+		
+		// Achievements/Level Up for beating a non-relax map
+		if (proGamer)
+		{
+			// Played 10 official maps achievement (May be broken?)
+			if (Singleton<SaveSystem>.Instance.GetInt("achievements.21.progress", 0) < 10 && // Played less than 10 official
+			    mapExists &&
+				!Singleton<SaveSystem>.Instance.GetBool("achievements.21.completed." + this.mapID, true)) // we haven't finished this map before
+			{
+				Singleton<SaveSystem>.Instance.SetBool("achievements.21.completed." + this.mapID, true, null);
+				Helpers.AddToStat("achievements.21.progress", 1);
+				SteamUserStats.IndicateAchievementProgress("NEW_ACHIEVEMENT_1_21", (uint)Helpers.GetStat("achievements.21.progress"), 10U);
+			}
+
+			// 90% or better achievement
+			if (this.pbase.accuracyScore >= 0.9f && mapData.source == FullMapData.MapSource.Workshop && map != null)
+				Helpers.ObtainAchievement(22);
+
+			// XP gained is acc * score
+			Helpers.AddToStat("player.xp", (int)(this.pbase.accuracyScore * (float)this.pbase.correctScore));
+
+			this.pbase.DeletePlayerCheckpointData();
+		}
+		else if (this.pbase.isPlayerWon && this.gameMode == GameScene.GameMode.Relax && mapData.source == FullMapData.MapSource.Workshop)
+		{
+			// Relax tracker achievement
+			Helpers.AddToStat("achievements.26.progress", 1);
+			SteamUserStats.IndicateAchievementProgress("NEW_ACHIEVEMENT_1_26", (uint)Helpers.GetStat("achievements.26.progress"), 5U);
+
+			// Perfect relax game achievement
+			if (mapExists && this.pbase.incorrectScore == 0)
+				Helpers.ObtainAchievement(27);
 		}
 	}
 
-	public void ShowResult(string result = "")
+	private void BuildMapInfo(RanksSystem.Map map, FullMapData mapData)
 	{
-		this.gameOver = true;
-
-		HandleMultiplayerStuff();
-		ObtainAchievements();
-
-		if (this.AllPlayersFinished())
-			this.currentMusicTime = this.calculatedmaptime;
-
-		if (string.IsNullOrEmpty(result))
-			this.levelProgressBar.transform.Find("Fill Area").Find("Fill").GetComponent<Image>().color = Color.red;
-
-		// Complete level
-		if (result == "CompletedLevel")
-		{
-			this.pbase.isMapCompleted = true;
-			this.pbase.isPlayerWon = true;
-		}
-
-		// Got highscore?
-		if (this.gameMode != GameScene.GameMode.Relax && this.pbase.GetCurrentScore() > this.pbase.lastBestScore && !this.pbase.scoreBeated)
-			base.StartCoroutine(this.NewHighScoreMeme());
-
-		FullMapData mapData = Singleton<MapsSystem>.Instance.GetMapData(this.mapID);
-
-		// Submit score and "replay" to server
-		this.pbase.StopReplayRecording();
-		if (Singleton<SaveSystem>.Instance.GetInt("settings.enableranking", 1, null) == 1 &&
-			this.gameMode != GameScene.GameMode.Relax &&
-			!string.IsNullOrEmpty(mapID) &&
-			RanksSystem.IsOfficial(ulong.Parse(mapID), false) &&
-			mapData.source == FullMapData.MapSource.Workshop)
-		{
-			string mapFilePath = mapData.fullLevelPath + "/" + Helpers.levelConfigFileName;
-			string replayJson  = this.pbase.Replay() != null ? JsonConvert.SerializeObject(this.pbase.Replay()) : "{}";
-
-			base.StartCoroutine(Singleton<RanksSystem>.Instance.SubmitScore(mapData.workshopId, this.gameMode, this.pbase.GetCurrentScore(), this.pbase.accuracyScore, this.pbase.incorrectScore, YAFECWOW.CompressString(replayJson), Helpers.CalculateMD5(mapFilePath)));
-		}
-
-		Singleton<ItemsHandler>.Instance.UpdatePlayerInventory();
-
-		// Add 1 to playcount of this map
-		string timesPlayedSave = "maps." + Singleton<MapsSystem>.Instance.GetMapID(mapData) + ".played";
-		Helpers.AddToStat(timesPlayedSave, 1);
-
 		FinishedMapInfo finishedMapInfo = new FinishedMapInfo();
-		RanksSystem.Map map = RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => "workshop." + x.id == this.mapID);
 		try
 		{
 			finishedMapInfo.completed = this.pbase.isMapCompleted;
@@ -402,53 +408,54 @@ public class GameScene : global::Scene
 			Singleton<GameManager>.Instance.FinishedMap(finishedMapInfo);
 		}
 		catch (Exception) { }
+	}
 
-		if (this.gameMode != GameScene.GameMode.Relax && this.pbase.isPlayerWon)
+	public void ShowResult(string result = "")
+	{
+		this.gameOver = true;
+
+		HandleMultiplayerStuff(result);
+
+		if (this.AllPlayersFinished())
+			this.currentMusicTime = this.calculatedmaptime;
+
+		if (string.IsNullOrEmpty(result))
+			this.levelProgressBar.transform.Find("Fill Area").Find("Fill").GetComponent<Image>().color = Color.red;
+
+		// Completed level?
+		bool completed = result.Equals("CompletedLevel");
+		this.pbase.isMapCompleted = completed;
+		this.pbase.isPlayerWon = completed;
+
+		// Got highscore?
+		if (this.gameMode != GameScene.GameMode.Relax && this.pbase.GetCurrentScore() > this.pbase.lastBestScore && !this.pbase.scoreBeated)
+			base.StartCoroutine(this.NewHighScoreMeme());
+
+		FullMapData mapData = Singleton<MapsSystem>.Instance.GetMapData(this.mapID);
+
+		// Submit score and "replay" to server
+		this.pbase.StopReplayRecording();
+		if (Singleton<SaveSystem>.Instance.GetInt("settings.enableranking", 1, null) == 1 &&
+			this.gameMode != GameScene.GameMode.Relax &&
+			!string.IsNullOrEmpty(mapData.workshopId) &&
+			RanksSystem.IsOfficial(ulong.Parse(mapData.workshopId), false) &&
+			mapData.source == FullMapData.MapSource.Workshop)
 		{
-			string completedMapSave = "maps." + Singleton<MapsSystem>.Instance.GetMapID(mapData) + ".completed";
-			Singleton<SaveSystem>.Instance.SetInt(completedMapSave, 1, null);
+			string mapFilePath = mapData.fullLevelPath + "/" + Helpers.levelConfigFileName;
+			string replayJson  = this.pbase.Replay() != null ? JsonConvert.SerializeObject(this.pbase.Replay()) : "{}";
 
-			// Play Multiplayer
-			if (!PhotonNetwork.offlineMode)
-			{
-				Helpers.ObtainAchievement(15);
-
-				// Play non official map in multiplayer
-				if (mapData.source == FullMapData.MapSource.Workshop)
-					Helpers.ObtainAchievement(16);
-			}
-
-			// Played 10 official maps achievement (Broken?)
-			if (Singleton<SaveSystem>.Instance.GetInt("achievements.21.progress", 0) < 10 &&
-			    map != null &&
-				!Singleton<SaveSystem>.Instance.GetBool("achievements.21.completed." + this.mapID, true)) // true to cancel our "!"
-			{
-				Singleton<SaveSystem>.Instance.SetBool("achievements.21.completed." + this.mapID, true, null);
-				Helpers.AddToStat("achievements.21.progress", 1);
-
-				SteamUserStats.IndicateAchievementProgress("NEW_ACHIEVEMENT_1_21", (uint)Helpers.GetStat("achievements.21.progress"), 10U);
-			}
-
-			// XP gained is acc * score
-			Helpers.AddToStat("player.xp", (int)(this.pbase.accuracyScore * (float)this.pbase.correctScore));
-
-			this.pbase.DeletePlayerCheckpointData();
-
-			// 90% or better achievement
-			if (this.pbase.accuracyScore >= 0.9f && mapData.source == FullMapData.MapSource.Workshop && map != null)
-				Helpers.ObtainAchievement(22);
+			base.StartCoroutine(Singleton<RanksSystem>.Instance.SubmitScore(mapData.workshopId, this.gameMode, this.pbase.GetCurrentScore(), this.pbase.accuracyScore, this.pbase.incorrectScore, YAFECWOW.CompressString(replayJson), Helpers.CalculateMD5(mapFilePath)));
 		}
 
-		// Relax tracker achievement
-		if (this.pbase.isPlayerWon && this.gameMode == GameScene.GameMode.Relax && mapData.source == FullMapData.MapSource.Workshop)
-		{
-			Helpers.AddToStat("achievements.26.progress", 1);
-			SteamUserStats.IndicateAchievementProgress("NEW_ACHIEVEMENT_1_26", (uint)Helpers.GetStat("achievements.26.progress"), 5U);
+		Singleton<ItemsHandler>.Instance.UpdatePlayerInventory();
 
-			// Perfect relax game achievement
-			if (map != null && this.pbase.incorrectScore == 0)
-				Helpers.ObtainAchievement(27);
-		}
+		// Add 1 to playcount of this map
+		string timesPlayedSave = "maps." + Singleton<MapsSystem>.Instance.GetMapID(mapData) + ".played";
+		Helpers.AddToStat(timesPlayedSave, 1);
+
+		RanksSystem.Map map = RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => "workshop." + x.id == this.mapID);
+		BuildMapInfo(map, mapData);
+		ObtainAchievementsAndLevelUp(map, mapData);
 
 		if (mapData.source == FullMapData.MapSource.Workshop && !string.IsNullOrEmpty(mapData.workshopId))
 			SteamUGC.StopPlaytimeTrackingForAllItems();
@@ -466,6 +473,7 @@ public class GameScene : global::Scene
 		set
 		{
 			this.currentMusicTime = value;
+
 			if (this.currentMusicTime >= 0f)
 			{
 				if (this.asampler.audioSources[0].clip)
@@ -473,24 +481,6 @@ public class GameScene : global::Scene
 
 				if (this.asampler.audioSources[1].clip)
 					this.asampler.audioSources[1].time = this.currentMusicTime;
-			}
-		}
-	}
-
-	public ObscuredFloat CurrentMusicTime
-	{
-		get => float.PositiveInfinity;
-		set
-		{
-			this.currentMusicTime = value;
-
-			if (this.currentMusicTime >= 0f)
-			{
-				if (this.asampler.audioSources[1].clip)
-					this.asampler.audioSources[1].time = this.currentMusicTime;
-
-				if (this.asampler.audioSources[0].clip)
-					this.asampler.audioSources[0].time = this.currentMusicTime;
 			}
 		}
 	}
@@ -504,36 +494,40 @@ public class GameScene : global::Scene
 		this.pbase.ResetEndless();
 	}
 
-	public bool AllPlayersWin()
-	{
-		bool result = true;
-		foreach (PhotonPlayer photonPlayer in PhotonNetwork.playerList)
-		{
-			if (photonPlayer.CustomProperties["win"] == null || (photonPlayer.CustomProperties["win"] != null && !(bool)photonPlayer.CustomProperties["win"]))
-			{
-				result = false;
-			}
-		}
-		return result;
-	}
-
 	public override void Update()
 	{
 		base.Update();
+
+		// Display Messages
+		// TODO: Make this a method
+		if (this.messageTextQueue.Count > 0 && !this.messageCanvas.activeSelf)
+		{
+			string message = this.messageTextQueue[0];
+			
+			float messageDuration = 1f;
+			if (this.messageTimeQueue.Count == this.messageTextQueue.Count)
+				messageDuration = this.messageTimeQueue[0];
+
+			base.StartCoroutine(this.ShowMessage(message, messageDuration * Singleton<SaveSystem>.Instance.GetFloat("settings.gamemessagesduration", 1f, null)));
+			this.messageTextQueue.RemoveAt(0);
+			this.messageTimeQueue.RemoveAt(0);
+		}
+
 		// Game Over?
 		if (this.gameOver)
 		{
-			if (this.pbase.currentState == PlayerBase.PlayerState.Finished)
-				this.SetUpGameOverShit(); // Setup Gameover UI and lower the volume and/or pitch
-
-			if (this.AllPlayersFinished() && (this.pbase.currentState == PlayerBase.PlayerState.Spectator || this.spectatePanel.activeSelf))
+			if (!gameOverSetUp && this.AllPlayersFinished() && (this.pbase.currentState == PlayerBase.PlayerState.Spectator || this.spectatePanel.activeSelf))
 			{
 				this.OxyPls(); // Turn off gameplay UI
 				this.pbase.currentState = PlayerBase.PlayerState.Finished;
 			}
+			if (this.pbase.currentState == PlayerBase.PlayerState.Finished)
+				this.SetUpGameOverShit(); // Setup Gameover UI and lower the volume and/or pitch
+			return;
 		}
+
 		// Gameplay
-		else if (this.isGameStarted)
+		if (this.isGameStarted)
 		{
 			// Press play on the music objects when we hit 0 seconds
 			if (!this.haveWeDoneFirstFrameShitYet && this.currentMusicTime > 0f)
@@ -566,7 +560,7 @@ public class GameScene : global::Scene
 				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⡳⣎⠈⠐⡣⣷⢍⠈⠀⠀⠀⣿⠀⠀⠀⣾⠀⠀⣼⠁⣸⢋⣸⡿⠃⠀⣾⠁⠀⠀⠀                    
 				//       i hate oxy's programming! ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⡳⣎⢈⠀⠑⠳⡳⡧⣦⣿⣎⣌⣬⣿⡄⡄⡷⡶⡷⠳⠓⠁⠀⣸⠇⠀⠀⠀⠀                    
 				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠱⡷⣦⣎⣌⢈⢈⠈⠀⠀⠀⠀⠀⠀⢈⢈⢈⢈⣈⣌⡶⠓⠀⠀⠀⠀⠀                    
-				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠑⠱⠳⠳⠳⠳⠳⠳⠳⠳⠳⠳⠳⠑⠑⠀⠀⠀⠀⠀⠀⠀⠀                    
+				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠑⠱⠳⠳⠳⠳⠳⠳⠳⠳⠳⠳⠳⠑⠑⠀⠀⠀⠀⠀⠀⠀⠀                    stop overreacting
 				{
 					foreach (GameEventInfo gei in this.pbase.gameEventInfoList)
 						Singleton<GameManager>.Instance.GameEvent(gei);
@@ -576,64 +570,53 @@ public class GameScene : global::Scene
 				}
 			}
 			else if (!this.gameOver)
-			{
 				this.HandleEndingShitIThink();
-			}
 		}
 		else if (this.AllPlayerLoaded())
 		{
 			this.pbase.photonView.RPC("StartRound", PhotonTargets.AllBufferedViaServer, null);
 		}
-		if (this.messageTextQueue.Count > 0 && !this.messageCanvas.activeSelf)
-		{
-			string message = this.messageTextQueue[0];
-			float num = 1f;
-			if (this.messageTimeQueue.Count == this.messageTextQueue.Count)
-			{
-				num = this.messageTimeQueue[0];
-			}
-			base.StartCoroutine(this.ShowMessage(message, num * Singleton<SaveSystem>.Instance.GetFloat("settings.gamemessagesduration", 1f, null)));
-			this.messageTextQueue.RemoveAt(0);
-			this.messageTimeQueue.RemoveAt(0);
-		}
 	}
 
 	public bool AllPlayerLoaded()
 	{
-		bool result = true;
 		foreach (PhotonPlayer photonPlayer in PhotonNetwork.playerList)
-		{
 			if (photonPlayer.CustomProperties["ready"] == null || (photonPlayer.CustomProperties["ready"] != null && !(bool)photonPlayer.CustomProperties["ready"]))
-			{
-				result = false;
-			}
-		}
-		return result;
+				return false;
+		return true;
 	}
 
 	public GameScene()
 	{
 		this.gameOver = false;
+		this.gameOverSetUp = false;
+
 		this.isGameStarted = false;
+
 		this.usingCheckpoints = true;
 		this.gameMode = GameScene.GameMode.Normal;
+
 		this.haveWeDoneFirstFrameShitYet = false;
+
 		this.messageTextQueue = new List<string>();
 		this.messageTimeQueue = new List<float>();
+
 		this.scoreStr = string.Empty;
 		this.livesAndOrAcc = string.Empty;
 		this.highScore = string.Empty;
 		this.combo = string.Empty;
+
 		this.currentMusicTime = 0f;
-		this.gameOverSetUp = false;
 	}
 
 	public void OnSpectateButton()
 	{
 		this.restartCheckpointPanel.SetActive(false);
 		this.restartNoCheckpointPanel.SetActive(false);
+
 		this.gameOverCanvas.SetActive(false);
 		this.spectatorCanvas.SetActive(true);
+
 		base.StartCoroutine(this.UpdateSpectatingInfo());
 		this.pbase.StartSpectating();
 	}
@@ -644,19 +627,11 @@ public class GameScene : global::Scene
 		base.StartCoroutine(this.UpdateSpectatingInfo());
 	}
 
-	public void OnEnable()
-	{
-	}
+	public void OnEnable() { }
 
-	public bool IsRoundFinished()
-	{
-		return this.gameOver && this.AllPlayersFinished();
-	}
+	public bool IsRoundFinished() => this.gameOver && this.AllPlayersFinished();
 
-	public override void Start()
-	{
-		this.Start(0f);
-	}
+	public override void Start() => this.Start(0f);
 
 	public void OnRestartRound()
 	{
@@ -664,123 +639,109 @@ public class GameScene : global::Scene
 		base.GetComponent<NetworkScene>().networkChatCanvas.SetActive(false);
 	}
 
-	public void OnRestartButton(bool CONOEKAENEN)
+	public void OnRestartButton(bool fullRestart)
 	{
-		if (CONOEKAENEN)
-		{
+		if (fullRestart)
 			this.pbase.DeletePlayerCheckpointData();
-		}
 		else if (this.pbase.ach12)
-		{
 			Helpers.ObtainAchievement(12);
-		}
-		base.GetComponent<NetworkScene>().photonView.RPC("OnMastedChangeScene", PhotonTargets.AllViaServer, new object[]
-		{
-			SceneManager.GetActiveScene().name
-		});
+		
+		base.GetComponent<NetworkScene>().photonView.RPC("OnMastedChangeScene", PhotonTargets.AllViaServer, SceneManager.GetActiveScene().name);
 	}
 
 	public void Start(float time)
 	{
 		base.Start();
 		this.Reset();
+
 		if (!PhotonNetwork.inRoom)
 		{
 			PhotonNetwork.offlineMode = true;
 			PhotonNetwork.JoinOrCreateRoom("offline", new RoomOptions(), TypedLobby.Default);
 		}
+
 		this.mapID = Singleton<SaveSystem>.Instance.GetString("menu.selectedlevelid", null);
 		FullMapData mapData = Singleton<MapsSystem>.Instance.GetMapData(this.mapID);
+
 		this.gameMode = (GameScene.GameMode)Singleton<SaveSystem>.Instance.GetInt("menu.selectedplaymode", 0, null);
+
+		// UI
 		this.scoreStr = LocalizationService.Instance.GetLocalizatedText("#score").ToUpper();
-		if (this.gameMode != GameScene.GameMode.Hardcore)
-		{
-			this.livesAndOrAcc = LocalizationService.Instance.GetLocalizatedText("#lives").ToUpper();
-		}
-		else
-		{
-			this.livesAndOrAcc = LocalizationService.Instance.GetLocalizatedText("#accuracy").ToUpper();
-		}
 		this.highScore = LocalizationService.Instance.GetLocalizatedText("#highscore").ToUpper();
 		this.combo = LocalizationService.Instance.GetLocalizatedText("#combo").ToUpper();
-		GameObject gameObject = this.levelInfoContent;
-		for (int i = 0; i < gameObject.transform.childCount; i++)
-		{
-			UnityEngine.Object.Destroy(gameObject.transform.GetChild(i).gameObject);
-		}
-		GameObject gameObject2 = Singleton<MapsSystem>.Instance.AddDownloadedLevelItemToList(this.levelInfo, mapData, gameObject);
-		gameObject2.GetComponent<LevelsListElementButton>().launchLevelMode = -1;
-		if (mapData.source != FullMapData.MapSource.Original && mapData.source != FullMapData.MapSource.Editor && Singleton<MapsSystem>.Instance.GetUserVote(ulong.Parse(mapData.workshopId)) == 0)
-		{
-			gameObject2.GetComponent<LevelsListElementButton>().ToggleRate();
-		}
-		if (mapData.mapData.maxLives < mapData.mapData.lives)
-		{
-			mapData.mapData.maxLives = mapData.mapData.lives;
-		}
-		GameObject gameObject3 = (!PhotonNetwork.inRoom) ? UnityEngine.Object.Instantiate<GameObject>(Resources.Load("Gameplay/Base") as GameObject) : PhotonNetwork.Instantiate("Gameplay/Base", new Vector3(0f, 0f, 0f), Quaternion.identity, 0);
-		this.pbase = gameObject3.GetComponent<PlayerBase>();
-		if (this.showHP)
-		{
-			this.HPTextnAcc.text = string.Empty;
-		}
+
+		// Display accuaracy only on hardcore
+		if (this.gameMode != GameScene.GameMode.Hardcore)
+			this.livesAndOrAcc = LocalizationService.Instance.GetLocalizatedText("#lives").ToUpper();
 		else
-		{
+			this.livesAndOrAcc = LocalizationService.Instance.GetLocalizatedText("#accuracy").ToUpper();
+
+		if (this.showHP)
+			this.HPTextnAcc.text = string.Empty;
+		else
 			this.HPTextnAcc.gameObject.SetActive(false);
-		}
-		bool flag = this.gameMode.Equals(GameScene.GameMode.PlayTest) && Singleton<SaveSystem>.Instance.GetBool("settings.disableeditordiscordrpc", true, null);
-		Singleton<GameManager>.Instance.UpdateOnlineStatus("Play" + ((!PhotonNetwork.offlineMode) ? "ing Multiplayer" : (flag ? "testing" : "ing Solo")), flag ? "" : ("Map: " + mapData.mapData.name.Replace(Environment.NewLine, string.Empty)), null, null, 0, 0);
+		
+		// Remove previous info
+		for (int i = 0; i < this.levelInfoContent.transform.childCount; i++)
+			UnityEngine.Object.Destroy(this.levelInfoContent.transform.GetChild(i).gameObject);
+
+		// Create map info
+		GameObject mapInfo = Singleton<MapsSystem>.Instance.AddDownloadedLevelItemToList(this.levelInfo, mapData, gameObject);
+		mapInfo.GetComponent<LevelsListElementButton>().launchLevelMode = -1;
+		if (mapData.source != FullMapData.MapSource.Original && mapData.source != FullMapData.MapSource.Editor && Singleton<MapsSystem>.Instance.GetUserVote(ulong.Parse(mapData.workshopId)) == 0)
+			mapInfo.GetComponent<LevelsListElementButton>().ToggleRate();
+
+		GameObject gameBase = (!PhotonNetwork.inRoom) ? UnityEngine.Object.Instantiate<GameObject>(Resources.Load("Gameplay/Base") as GameObject) : PhotonNetwork.Instantiate("Gameplay/Base", new Vector3(0f, 0f, 0f), Quaternion.identity, 0);
+		this.pbase = gameBase.GetComponent<PlayerBase>();
+			
+		// Discord RPC
+		bool discord = this.gameMode.Equals(GameScene.GameMode.PlayTest) && Singleton<SaveSystem>.Instance.GetBool("settings.disableeditordiscordrpc", true, null);
+		
+		string RPCDetails = "Play" + ((!PhotonNetwork.offlineMode) ? "ing Multiplayer" : (discord ? "testing" : "ing Solo"));
+		string RPCState = discord ? "" : ("Map: " + mapData.mapData.name.Replace(Environment.NewLine, string.Empty));
+
+		Singleton<GameManager>.Instance.UpdateOnlineStatus(RPCDetails, RPCState, null, null, 0, 0);
+
 		if (mapData.source == FullMapData.MapSource.Workshop && !string.IsNullOrEmpty(mapData.workshopId))
 		{
 			List<PublishedFileId_t> list = new List<PublishedFileId_t>();
 			list.Add(new PublishedFileId_t(ulong.Parse(mapData.workshopId)));
-			SteamUGC.StartPlaytimeTracking(list.ToArray(), (uint)list.Count);
+			SteamUGC.StartPlaytimeTracking(list.ToArray(), (uint)list.Count); // Can't we just make the array instead of doing this crap with a list?
 		}
+
 		Debug.Log("[GameScene] Checkpoints count: " + mapData.mapData.checkpoints.Count);
 		Debug.Log("[GameScene] Events count: " + mapData.mapData.events.Count);
-		if (mapData.mapData.events.Find((MapEvent x) => x.data[0] == "MapEnd") != null)
-		{
-			List<MapEvent> events = mapData.mapData.events;
-			this.calculatedmaptime = events.Find((MapEvent x) => x.data[0] == "MapEnd").time;
-		}
-		else
-		{
-			this.calculatedmaptime = mapData.mapData.musicTime;
-		}
-		if (!PhotonNetwork.offlineMode)
-		{
-			this.usingCheckpoints = PhotonNetwork.offlineMode;
-		}
+		
+		MapEvent mapEvent = mapData.mapData.events.Find((MapEvent x) => x.data[0] == "MapEnd");
+		this.calculatedmaptime = mapEvent == null ? mapData.mapData.musicTime : mapEvent.time;
+
 		this.usingCheckpoints = (this.gameMode != GameScene.GameMode.Hardcore && this.gameMode != GameScene.GameMode.Endless);
+
 		this.pbase.gameEventInfoList = new List<GameEventInfo>();
 		GameEventInfo gameEventInfo = new GameEventInfo();
+
 		try
 		{
 			gameEventInfo.isstoryboardactive = !Singleton<SaveSystem>.Instance.GetBool("settings.disablestoryboard", false, null);
+
 			gameEventInfo.gamemode = (int)this.gameMode;
+
 			RanksSystem.Map map = RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => "workshop." + x.id == this.mapID);
-			if (map != null)
-			{
-				gameEventInfo.isofficial = map.isOfficial;
-				gameEventInfo.isloved = map.isLoved;
-				gameEventInfo.isfunny = map.isFunny;
-				gameEventInfo.mapdifficulty = map.difficulty;
-			}
-			else
-			{
-				gameEventInfo.isofficial = false;
-				gameEventInfo.isloved = false;
-				gameEventInfo.isfunny = false;
-				gameEventInfo.mapdifficulty = -1f;
-			}
+			
+			bool mapExists = map != null;
+			gameEventInfo.isofficial = mapExists && map.isOfficial;
+			gameEventInfo.isloved = mapExists && map.isLoved;
+			gameEventInfo.isfunny = mapExists && map.isFunny;
+
+			gameEventInfo.mapdifficulty = mapExists ? map.difficulty : -1f;
 			gameEventInfo.handsCount = mapData.mapData.handCount;
+
 			gameEventInfo.mapid = this.mapID;
 			gameEventInfo.maptags = string.Join(",", mapData.mapData.tags.ToArray());
 			gameEventInfo.mapper = string.Empty + mapData.mapperSteamID;
 		}
-		catch (Exception)
-		{
-		}
+		catch (Exception) { }
+
 		this.pbase.gameEventInfoBase = gameEventInfo;
 		this.pbase.InitSystem();
 	}
@@ -793,15 +754,13 @@ public class GameScene : global::Scene
 			this.spectatorCanvas.SetActive(false);
 			this.spectatePanel.SetActive(false);
 			this.ingameUICanvas.SetActive(false);
+
 			if (!this.pbase.isPlayerWon && this.pbase.CanResumeFromCheckpoint())
-			{
 				this.restartCheckpointPanel.SetActive(true);
-			}
 			else
-			{
 				this.restartNoCheckpointPanel.SetActive(true);
-			}
 		}
+
 		this.doneWithOxy = true;
 	}
 
@@ -811,157 +770,138 @@ public class GameScene : global::Scene
 		{
 			foreach (AudioSource audioSource in this.asampler.audioSources)
 			{
+				// If lost, audio pitch down
 				if (!this.pbase.isPlayerWon)
-				{
 					audioSource.pitch = Helpers.Damp(audioSource.pitch, 0f, 0.5f);
-				}
+
+				// Lower audio volume
 				audioSource.volume = Helpers.Damp(audioSource.volume, 0f, 0.5f);
 			}
+
 			this.asampler.isMuted = true;
 		}
-		if (!this.gameOverSetUp)
-		{
-			this.ingameUICanvas.SetActive(false);
-			FullMapData mapData = Singleton<MapsSystem>.Instance.GetMapData(this.mapID);
-			if ((this.gameMode == GameScene.GameMode.Hardcore || this.gameMode == GameScene.GameMode.Normal) && !string.IsNullOrEmpty(mapData.workshopId) && RanksSystem.GetOfficialMapsList().Exists((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId) && x.isOfficial))
-			{
-				if (GameObject.Find("FinalScoreText"))
-				{
-					GameObject.Find("FinalScoreText").SetActive(false);
-				}
-			}
-			else
-			{
-				if (GameObject.Find("HightScoreMaxPointsText"))
-				{
-					GameObject.Find("HightScoreMaxPointsText").SetActive(false);
-				}
-				if (GameObject.Find("PossibleMapPointsText"))
-				{
-					GameObject.Find("PossibleMapPointsText").SetActive(false);
-				}
-				if (GameObject.Find("PointsScoreText"))
-				{
-					GameObject.Find("PointsScoreText").SetActive(false);
-				}
-				if (GameObject.Find("FinalScoreSmallText"))
-				{
-					GameObject.Find("FinalScoreSmallText").SetActive(false);
-				}
-			}
-			if ((this.gameMode == GameScene.GameMode.Hardcore || this.gameMode == GameScene.GameMode.Endless) && GameObject.Find("CheckpointsScoreText"))
-			{
-				GameObject.Find("CheckpointsScoreText").SetActive(false);
-			}
-			if (this.gameMode != GameScene.GameMode.Endless && GameObject.Find("EndlessLoopsScoreText"))
-			{
-				GameObject.Find("EndlessLoopsScoreText").SetActive(false);
-			}
-			int currentScore = this.pbase.GetCurrentScore();
-			if (GameObject.Find("LastHighScoreText"))
-			{
-				GameObject.Find("LastHighScoreText").GetComponent<Text>().text = string.Empty + this.pbase.lastBestScore;
-			}
-			if (GameObject.Find("PossibleMapMaxScoreText"))
-			{
-				GameObject.Find("PossibleMapMaxScoreText").GetComponent<Text>().text = string.Empty + Helpers.GetMapMaxScore(this.pbase.fullMapData.mapData);
-			}
-			if (GameObject.Find("GameModeText"))
-			{
-				GameObject.Find("GameModeText").GetComponent<Text>().text = string.Empty + LocalizationService.Instance.GetLocalizatedText("#" + this.gameMode.ToString().ToLower() + "mode").ToUpper();
-			}
-			if (GameObject.Find("FinalScoreText"))
-			{
-				GameObject.Find("FinalScoreText").GetComponent<Text>().text = string.Empty + currentScore;
-			}
-			if (GameObject.Find("TotalHitsScoreText"))
-			{
-				GameObject.Find("TotalHitsScoreText").GetComponent<Text>().text = string.Empty + (this.pbase.correctScore + this.pbase.incorrectScore);
-			}
-			if (GameObject.Find("PerfectHitsScoreText"))
-			{
-				GameObject.Find("PerfectHitsScoreText").GetComponent<Text>().text = string.Empty + this.pbase.perfectHits;
-			}
-			if (GameObject.Find("CorrectHitsScoreText"))
-			{
-				GameObject.Find("CorrectHitsScoreText").GetComponent<Text>().text = string.Empty + (this.pbase.correctScore - this.pbase.perfectHits);
-			}
-			if (GameObject.Find("IncorrectHitsScoreText"))
-			{
-				GameObject.Find("IncorrectHitsScoreText").GetComponent<Text>().text = string.Empty + this.pbase.incorrectScore;
-			}
-			if (GameObject.Find("ComboScoreText"))
-			{
-				GameObject.Find("ComboScoreText").GetComponent<Text>().text = string.Empty + Mathf.RoundToInt(this.pbase.comboScore);
-			}
-			if (GameObject.Find("PenaltyScoreText"))
-			{
-				GameObject.Find("PenaltyScoreText").GetComponent<Text>().text = string.Empty + Mathf.CeilToInt(this.pbase.penaltyScore);
-			}
-			if (GameObject.Find("AccuracyScoreText"))
-			{
-				GameObject.Find("AccuracyScoreText").GetComponent<Text>().text = string.Empty + (Math.Floor((double)(this.pbase.accuracyScore * 10000f)) / 10000.0 * 100.0).ToString("0.00") + "%";
-			}
-			if (GameObject.Find("CheckpointsScoreText"))
-			{
-				GameObject.Find("CheckpointsScoreText").GetComponent<Text>().text = string.Empty + this.pbase.checkpointsUsed;
-			}
-			if (GameObject.Find("EndlessLoopsScoreText"))
-			{
-				GameObject.Find("EndlessLoopsScoreText").GetComponent<Text>().text = string.Empty + this.pbase.loopsCount;
-			}
-			if (GameObject.Find("HightScoreMaxPointsText"))
-			{
-				float num = (float)this.pbase.lastBestScore / (float)Helpers.GetMapMaxScore(this.pbase.fullMapData.mapData) * RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId)).difficulty;
-				GameObject.Find("HightScoreMaxPointsText").GetComponent<Text>().text = string.Empty + (Math.Floor((double)(num * 100f)) / 100.0).ToString("0.00");
-			}
-			if (GameObject.Find("PossibleMapPointsText"))
-			{
-				GameObject.Find("PossibleMapPointsText").GetComponent<Text>().text = string.Empty + RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId)).difficulty.ToString("0.00");
-			}
-			if (GameObject.Find("PointsScoreText"))
-			{
-				float num2 = (float)currentScore / (float)Helpers.GetMapMaxScore(this.pbase.fullMapData.mapData) * RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId)).difficulty;
-				num2 = ((num2 >= 0f) ? num2 : 0f);
-				GameObject.Find("PointsScoreText").GetComponent<Text>().text = string.Empty + (Math.Floor((double)(num2 * 100f)) / 100.0).ToString("0.00");
-			}
-			if (GameObject.Find("FinalScoreSmallText"))
-			{
-				GameObject.Find("FinalScoreSmallText").GetComponent<Text>().text = string.Empty + currentScore;
-			}
-			if (GameObject.Find("ExitButton"))
-			{
-				if (!PhotonNetwork.offlineMode)
-				{
-					GameObject.Find("ExitButton").gameObject.GetComponentInChildren<Text>().text = ((!PhotonNetwork.isMasterClient) ? LocalizationService.Instance.GetTextByKey("leave").ToUpper() : LocalizationService.Instance.GetTextByKey("tolobby").ToUpper());
-					if (PhotonNetwork.inRoom)
-					{
-						base.GetComponent<NetworkScene>().networkChatCanvas.SetActive(true);
-						if (!PhotonNetwork.isMasterClient && GameObject.Find("ResetButton"))
-						{
-							GameObject.Find("ResetButton").GetComponent<Button>().interactable = false;
-						}
-					}
-				}
-				else if (this.gameMode == GameScene.GameMode.PlayTest)
-				{
-					GameObject.Find("ExitButton").gameObject.GetComponentInChildren<Text>().text = "Return To Editor";
-				}
-				this.gameOverSetUp = true;
-			}
-		}
+
 		if (Singleton<RanksSystem>.Instance.isRankChanged)
-		{
 			Singleton<RanksSystem>.Instance.DisplayRanksChanges();
-		}
+
 		if (Singleton<ItemsHandler>.Instance.newItemsNotifications.Count > 0)
-		{
 			Singleton<ItemsHandler>.Instance.ShowNewItems();
-		}
+
 		if (Singleton<ChallengesManager>.Instance.HasProgress())
-		{
 			Singleton<ChallengesManager>.Instance.RewardsReadyNotification();
+
+		if (this.gameOverSetUp || !this.gameOverCanvas.active) return;
+		
+		// Hide Game UI (but not progress bar)
+		HPTextnAcc.text = "";
+		scoreText.text = "";
+		comboTextGO.text = "";
+		this.ingameUICanvas.transform.FindDeepChild("BestScoreText").GetComponent<Text>().text = "";
+		this.ingameUICanvas.transform.FindDeepChild("Fill").GetComponent<Image>().color = new Color(0.666f, 0.666f, 0.666f, 0f);
+
+		FullMapData mapData = Singleton<MapsSystem>.Instance.GetMapData(this.mapID);
+
+		// In Vanilla, we fucking called "Find" up to 4 times for each object.... "if (Find()) { Find().changeMe }" fucking gross
+		// Even this is unoptimal, shoulda been initialized into members without find...
+		GameObject finalScoreText         = GameObject.Find("FinalScoreText");
+
+		GameObject highScoreMaxPointsText = GameObject.Find("HightScoreMaxPointsText");
+		GameObject maxPossiblePointsText  = GameObject.Find("PossibleMapPointsText");
+		GameObject pointsText             = GameObject.Find("PointsScoreText");
+		GameObject finalScoreSmallText    = GameObject.Find("FinalScoreSmallText");
+
+		GameObject checkpointScoreText    = GameObject.Find("CheckpointsScoreText");
+		GameObject endlessLoopsScoreText  = GameObject.Find("EndlessLoopsScoreText");
+
+		GameObject lastHighScoreText      = GameObject.Find("LastHighScoreText");
+		GameObject maxPossibleScoreText   = GameObject.Find("PossibleMapMaxScoreText");
+
+		GameObject gameModeText           = GameObject.Find("GameModeText");
+
+		GameObject totalHitsScoreText     = GameObject.Find("TotalHitsScoreText");
+		GameObject perfectHitsScoreText   = GameObject.Find("PerfectHitsScoreText");
+		GameObject correctHitsScoreText   = GameObject.Find("CorrectHitsScoreText");
+		GameObject incorrectHitsScoreText = GameObject.Find("IncorrectHitsScoreText");
+
+		GameObject comboScoreText         = GameObject.Find("ComboScoreText");
+		GameObject penaltyScoreText       = GameObject.Find("PenaltyScoreText");
+		GameObject accuracyScoreText      = GameObject.Find("AccuracyScoreText");
+		GameObject checkpointsScoreText   = GameObject.Find("CheckpointsScoreText");
+
+		GameObject exitButton             = GameObject.Find("ExitButton");
+		GameObject resetButton            = GameObject.Find("ResetButton");
+
+		int currentScore = this.pbase.GetCurrentScore();
+		// Ranked play? (Official on hardcore/normal)
+		bool isRanked = (this.gameMode == GameScene.GameMode.Hardcore || this.gameMode == GameScene.GameMode.Normal)
+		                && !string.IsNullOrEmpty(mapData.workshopId)
+				        && RanksSystem.GetOfficialMapsList().Exists((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId)
+				        && x.isOfficial);
+
+		if (finalScoreText != null)	        finalScoreText.SetActive(!isRanked);
+
+		if (highScoreMaxPointsText != null) highScoreMaxPointsText.SetActive(isRanked);
+		if (maxPossiblePointsText != null)  maxPossiblePointsText.SetActive(isRanked);
+		if (pointsText != null)             pointsText.SetActive(isRanked);
+		if (finalScoreSmallText != null)    finalScoreSmallText.SetActive(isRanked);
+
+		if (checkpointScoreText != null)    checkpointScoreText.SetActive(this.gameMode != GameScene.GameMode.Hardcore && this.gameMode != GameScene.GameMode.Endless);
+		if (endlessLoopsScoreText != null)  endlessLoopsScoreText.SetActive(this.gameMode == GameScene.GameMode.Endless);
+
+		if (lastHighScoreText != null)      lastHighScoreText.GetComponent<Text>().text = "" + this.pbase.lastBestScore;
+		if (maxPossibleScoreText != null)   maxPossibleScoreText.GetComponent<Text>().text = "" + Helpers.GetMapMaxScore(this.pbase.fullMapData.mapData);
+
+		string gameModeString =
+			LocalizationService.Instance.GetLocalizatedText("#" + this.gameMode.ToString().ToLower() + "mode").ToUpper();
+		if (gameModeText != null)           gameModeText.GetComponent<Text>().text = gameModeString;
+
+		if (finalScoreText != null)         finalScoreText.GetComponent<Text>().text = "" + currentScore;
+
+		if (totalHitsScoreText != null)     totalHitsScoreText.GetComponent<Text>().text = "" + (this.pbase.correctScore + this.pbase.incorrectScore);
+		if (perfectHitsScoreText != null)   perfectHitsScoreText.GetComponent<Text>().text = "" + this.pbase.perfectHits;
+		if (correctHitsScoreText != null)   correctHitsScoreText.GetComponent<Text>().text = "" + (this.pbase.correctScore - this.pbase.perfectHits);
+		if (incorrectHitsScoreText != null) incorrectHitsScoreText.GetComponent<Text>().text = "" + this.pbase.incorrectScore;
+
+		string accuracyScoreString =
+			(Math.Floor((double)(this.pbase.accuracyScore * 10000f)) / 10000.0 * 100.0).ToString("0.00") + "%";
+		if (comboScoreText != null)         comboScoreText.GetComponent<Text>().text = "" + Mathf.RoundToInt(this.pbase.comboScore);
+		if (penaltyScoreText != null)       penaltyScoreText.GetComponent<Text>().text = "" + Mathf.CeilToInt(this.pbase.penaltyScore);
+		if (accuracyScoreText != null)      accuracyScoreText.GetComponent<Text>().text = accuracyScoreString;
+
+		if (checkpointsScoreText != null)   checkpointsScoreText.GetComponent<Text>().text = "" + this.pbase.checkpointsUsed;
+		if (endlessLoopsScoreText != null)  endlessLoopsScoreText.GetComponent<Text>().text = "" + this.pbase.loopsCount;
+
+		if (maxPossiblePointsText != null)  maxPossiblePointsText.GetComponent<Text>().text = RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId)).difficulty.ToString("0.00");
+		if (finalScoreSmallText != null)    finalScoreSmallText.GetComponent<Text>().text = "" + currentScore;
+			
+		if (highScoreMaxPointsText != null)
+		{
+			float num = (float)this.pbase.lastBestScore / (float)Helpers.GetMapMaxScore(this.pbase.fullMapData.mapData) * RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId)).difficulty;
+			highScoreMaxPointsText.GetComponent<Text>().text = (Math.Floor((double)(num * 100f)) / 100.0).ToString("0.00");
 		}
+			
+		if (pointsText != null)
+		{
+			float num2 = (float)currentScore / (float)Helpers.GetMapMaxScore(this.pbase.fullMapData.mapData) * RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId)).difficulty;
+			num2 = ((num2 >= 0f) ? num2 : 0f);
+			pointsText.GetComponent<Text>().text = (Math.Floor((double)(num2 * 100f)) / 100.0).ToString("0.00");
+		}
+			
+		if (exitButton != null)
+		{
+			if (!PhotonNetwork.offlineMode)
+			{
+				exitButton.gameObject.GetComponentInChildren<Text>().text = ((!PhotonNetwork.isMasterClient) ? LocalizationService.Instance.GetTextByKey("leave").ToUpper() : LocalizationService.Instance.GetTextByKey("tolobby").ToUpper());
+				base.GetComponent<NetworkScene>().networkChatCanvas.SetActive(PhotonNetwork.inRoom);
+				if (resetButton != null)
+					resetButton.GetComponent<Button>().interactable = PhotonNetwork.inRoom && PhotonNetwork.isMasterClient;
+			}
+			else if (this.gameMode == GameScene.GameMode.PlayTest)
+				exitButton.gameObject.GetComponentInChildren<Text>().text = "Return To Editor";
+
+		}
+
+		this.gameOverSetUp = true;
 	}
 
 	private void FirstFrameShit()
@@ -975,87 +915,54 @@ public class GameScene : global::Scene
 
 	private void HandleEndingShitIThink()
 	{
-		bool flag = true;
 		foreach (GameObject gameObject in this.pbase.playerController.objects)
+			if (gameObject.transform.childCount > 0) return;
+			
+		this.pbase.isMapCompleted = true;
+
+		if (this.gameMode != GameScene.GameMode.Endless)
 		{
-			flag = (flag && gameObject.transform.childCount <= 0);
-			if (!flag)
+			ExitGames.Client.Photon.Hashtable finishedHashtable = new ExitGames.Client.Photon.Hashtable {{"finished", true}};
+			PhotonNetwork.player.SetCustomProperties(finishedHashtable, null, false);
+			this.pbase.currentState = PlayerBase.PlayerState.Finished;
+			if (this.pbase.photonView.isMine)
 			{
-				break;
+				ExitGames.Client.Photon.Hashtable winHashtable = new ExitGames.Client.Photon.Hashtable {{"win", true}};
+				PhotonNetwork.player.SetCustomProperties(winHashtable, null, false);
 			}
+
+			this.ShowResult("CompletedLevel");
+			return;
 		}
-		if (flag)
-		{
-			this.pbase.isMapCompleted = true;
-			if (this.gameMode != GameScene.GameMode.Endless)
-			{
-				ExitGames.Client.Photon.Hashtable eneebhgaajh = new ExitGames.Client.Photon.Hashtable
-				{
-					{
-						"finished",
-						true
-					}
-				};
-				PhotonNetwork.player.SetCustomProperties(eneebhgaajh, null, false);
-				this.pbase.currentState = PlayerBase.PlayerState.Finished;
-				if (this.pbase.photonView.isMine)
-				{
-					ExitGames.Client.Photon.Hashtable eneebhgaajh2 = new ExitGames.Client.Photon.Hashtable
-					{
-						{
-							"win",
-							true
-						}
-					};
-					PhotonNetwork.player.SetCustomProperties(eneebhgaajh2, null, false);
-				}
-				this.ShowResult("CompletedLevel");
-				return;
-			}
-			this.RestartEndless();
-		}
+
+		this.RestartEndless();
 	}
 
 	private void UpdateUI()
 	{
 		this.levelProgressBar.GetComponent<Slider>().value = this.currentMusicTime;
+
 		PlayerBase spectatedPlayerBase = this.pbase;
+		
 		if (this.pbase.currentState == PlayerBase.PlayerState.Spectator && this.pbase.spectatedPlayerBase != null)
-		{
 			spectatedPlayerBase = this.pbase.spectatedPlayerBase;
-		}
+		
+		// Mod: show hp and text at once
 		if (this.showHP)
 		{
 			this.HPTextnAcc.text = string.Empty;
 			if (this.gameMode != GameScene.GameMode.Hardcore)
-			{
-				this.HPTextnAcc.text = string.Concat(new object[]
-				{
-					LocalizationService.Instance.GetLocalizatedText("#lives").ToUpper(),
-					": ",
-					spectatedPlayerBase.lives,
-					" / ",
-					spectatedPlayerBase.fullMapData.mapData.maxLives,
-					"\n"
-				});
-			}
-			this.HPTextnAcc.text = string.Concat(new string[]
-			{
-				this.HPTextnAcc.text,
-				LocalizationService.Instance.GetLocalizatedText("#accuracy").ToUpper(),
-				": ",
-				(Math.Floor((double)(spectatedPlayerBase.accuracyScore * 10000f)) / 10000.0 * 100.0).ToString("0.00"),
-				"%"
-			});
+				this.HPTextnAcc.text = LocalizationService.Instance.GetLocalizatedText("#lives").ToUpper() +
+				                       ": " + spectatedPlayerBase.lives + " / " +
+				                       spectatedPlayerBase.fullMapData.mapData.maxLives + "\n";
+
+			this.HPTextnAcc.text += LocalizationService.Instance.GetLocalizatedText("#accuracy").ToUpper() +
+			                        ": " + (Math.Floor((double)(spectatedPlayerBase.accuracyScore * 10000f)) / 10000.0 * 100.0).ToString("0.00") + "%";
 		}
+
 		this.scoreText.text = this.scoreStr + ": " + spectatedPlayerBase.GetCurrentScore();
-		this.comboTextGO.text = string.Concat(new object[]
-		{
-			this.combo,
-			": ",
-			"x",
-			spectatedPlayerBase.currentCombo
-		});
+
+		this.comboTextGO.text = this.combo + ": " + "x" + spectatedPlayerBase.currentCombo;
 	}
 
 	public Image hiddenImage;
