@@ -42,6 +42,7 @@ dnSpy does not save comments or extra white space, cannot access all the origina
 ### Bug fixes
 - Vanilla: Background colors not being parsed correctly in editor or something idr
 - Vanilla: Can record highscores on first attempt again (oxy was checking for something only hackers could do cool)
+- Vanilla/Mod: Fixed game over screen (again)
 - Mod: "Fixed" quickstart offline mode (dammit it doesn't work)
 - Mod: "Start offline mode" message won't pop up if you press o in console.
 
