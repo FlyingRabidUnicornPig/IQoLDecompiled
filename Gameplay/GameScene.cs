@@ -1,3 +1,7 @@
+/*
+Main Gameplay class
+*/
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -540,30 +544,7 @@ public class GameScene : global::Scene
 			{
 				this.currentMusicTime += Time.deltaTime;
 				this.UpdateUI();
-				if (hardInput.GetKeyDown("restart") && PhotonNetwork.offlineMode) // There's like, 4 different ways of inputting in this game i hate oxy's programming!
-				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣌⣮⡷⠳⠳⠳⠳⢳⢻⢻⢻⢻⢻⢻⢻⢻⠳⡧⡦⡦⡦⣄⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                    
-				//		i hate oxy's programming!   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⠷⠁⠀⠀⣈⡬⠶⢛⣙⣌⡄⣄⣌⣌⢙⢙⢙⢹⢻⢪⢺⢻⢙⣝⢹⡳⣎⣂⠀⠀⠀⠀⠀⠀⠀                    
-				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⣼⠓⠀⠀ ⡾⣛⡮⢓⡝⡄⡦⠢⠢⢄⠀    ⠑⢙⢙⣝⢈⢈⠐⠀⠀⠱⣧⠀⠀⠀⠀⠀                    i hate oxy's programming!
-				//                                  ⠀⠀⠀⠀⠀⠀⠀⣼⠗⠀⠀ ⢁⡼⣓⣾⡅⠢⠈⠢⠈⠈⣔⢎⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⡣⠌⠀⠀⠐⣯⣂⠀⠀⠀⠀⠀                    
-				//                                  ⠀⠀⠀⠀⠀⠀⣨⠿⠀⠀⠀⠀⠐⣨⠗⠀⠁⠀⢈⠈⠈⡀⠖⠐⣣⠀⠀⠀⠀⢈⡤⠲⠗⠑⢑⠑⠣⣆⠈⣷⣂⠀⠀⠀⠀                    
-				//                                  ⠀⠀⠀⠀⢀⣾⢿⢈⢈⢈⠀⢀⣬⠏⡐⠀⠀⣾⣿⣿⣿⠎⠀⠴⠑⣣⠀⠀⣨⡃⠈⠀⢀⣬⣮⣌⠐⠀⠰⠜⣷⢎⠀⠀⠀           i hate oxy's programm!         
-				//                                  ⠀⠀⠀⣀⡿⡭⠓⢁⣌⡬⣮⢌⠘⣇⠀⡀⠄⠐⠳⠳⠓⠀⠠⠂⣪⠀⠀⡳⣿⠀⠀⠀⠰⣷⣿⡷⠀⡀⢢⢿⣂⡱⢏⠀⠀                    
-				//                                  ⠀⠀⢀⡿⣱⠁⣨⠷⠁⣀⠌⠱⡳⠆⠱⡧⣌⣬⢫⢈⢙⣙⡭⠶⠁⠀⠀⠀⣰⡫⣤⠈⠀⠌⠀⢀⢈⡌⣷⠔⠎⣃⣿⠀⠀                    
-				//                                  ⠀⠀⣰⠏⣰⠀⣿⠀⢈⠌⡷⣎⢌⠀⠀⠀⠀⠀⠑⠑⢁⣀⣌⠌⠀⠀⠀⠀⠰⣧⣎⠐⠑⠑⠑⠑⣡⠌⠀⠀⠏⣸⣿⠀⠀                    
-				//      i hate oxy's programming!   ⠀⠀⡰⣯⣰⠀⣿⠰⠳⠌⠌⠀⠱⡳⣮⣌   ⠑⠁⣿⠀⣌⣄⢌⠀⠀⠀⢀⡿⣄ ⠈⠀⠀⣸⣯⠀⠲⡈⣣⠟⠀⠀                    
-				//                                  ⠀⠀⠀⣳⢞⡃⢘⠀⠀⠐⣿⣎⢈⠀⣿⠑⠳⡳⣦⣌⢌⠸⠃⠁⠀⠑⠀⣄⣌⡾⠃⠀⠀⠐⢁⣬⣷⣿⠏⠓⣾⠀⠀⠀             i hate oxy's programming!       
-				//                                  ⠀⠀⠀⠀⡱⣎⠘⠀⠀⠀⣿⠀⣿⣯⣿⣯⢌⠀⠀⠐⣿⠳⡳⡦⣦⣌⣌⣌⣝⣌⣌⣌⣮⡾⠓⣣⠀⣿⠏⠀⣾⠀⠀⠀                    
-				//                                  ⠀⠀⠀⠀⠀⠰⣯⠈⠀⠀⣰⣿⠀⠀⠀⠀⠀⣿⣮⣬⢏⠈⠀⠀⠀⣿⠀⠀⠑⠟⠁⠀⠀⣯⢈⠀⣮⣿⣯⠀⠀⣿⠀⠀⠀⠀                    
-				//                                  ⠀⠀⠀⠀⠀⠀⠰⣏⠀⠀⡰⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣯⣮⣿⣮⣮⣮⣿⣮⣮⣿⣿⣿⣿⠀⠀⣿⠀⠀⣳⠀⠀⠀⠀                    
-				//                                  ⠀⠀⠀⠀⠀⠀⠀⡱⣏⠀⠀⣷⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⠀⣰⠀⠀⠀⠀                    
-				//        i hate oxy's programming! ⠀⠀⠀⠀⠀⠀⠀⠀⠱⣯⠌⠰⣏⠑⣳⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⣰⠀⠀⠀⠀                    
-				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⡳⣎⠰⣧⠈⣿⠱⡳⣷⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ ⣿⠀⣰⠌⠀⠀⠀  i hate oxy's programming!                  
-				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠱⣯⠘⡳⢏⠀⠀⠀⠐⣿⠳⡷⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⣰⠏⠀⠀⠀                    
-				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⣧⠌⠰⣧⢌⠀⣀⠟⠀⠀⠀⠑⣿⠳⠳⡷⣷⡿⡷⣿⡿⣷⡿⣳⠟⡿⠀⣰⠏⠀⠀⠀                    
-				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⡳⣎⠈⠐⡣⣷⢍⠈⠀⠀⠀⣿⠀⠀⠀⣾⠀⠀⣼⠁⣸⢋⣸⡿⠃⠀⣾⠁⠀⠀⠀                    
-				//       i hate oxy's programming! ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⡳⣎⢈⠀⠑⠳⡳⡧⣦⣿⣎⣌⣬⣿⡄⡄⡷⡶⡷⠳⠓⠁⠀⣸⠇⠀⠀⠀⠀                    
-				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠱⡷⣦⣎⣌⢈⢈⠈⠀⠀⠀⠀⠀⠀⢈⢈⢈⢈⣈⣌⡶⠓⠀⠀⠀⠀⠀                    
-				//                                  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠑⠱⠳⠳⠳⠳⠳⠳⠳⠳⠳⠳⠳⠑⠑⠀⠀⠀⠀⠀⠀⠀⠀                    stop overreacting
+				if (hardInput.GetKeyDown("restart") && PhotonNetwork.offlineMode)
 				{
 					foreach (GameEventInfo gei in this.pbase.gameEventInfoList)
 						Singleton<GameManager>.Instance.GameEvent(gei);
