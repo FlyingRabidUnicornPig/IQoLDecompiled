@@ -17,14 +17,20 @@ public class GameScene : global::Scene
 {
 	public void OnStartRound()
 	{
-		Transform bestScoreText = this.ingameUICanvas.transform.FindDeepChild("BestScoreText");
-
-		// Highscore
-		bestScoreText.GetComponent<Text>().text = this.highScore + ": " + this.pbase.lastBestScore;
-		
 		// stop loading, start game
 		this.loadingCanvas.SetActive(false);
 		this.ingameUICanvas.SetActive(true);
+
+		// Highscore
+		Transform bestScoreText = this.ingameUICanvas.transform.FindDeepChild("BestScoreText");
+		bestScoreText.GetComponent<Text>().text = this.highScore + ": " + this.pbase.lastBestScore;
+
+		// Reset UI
+		this.HPTextnAcc.color = Color.white;
+		this.scoreText.color = Color.white;
+		this.comboTextGO.color = Color.white;
+		bestScoreText.GetComponent<Text>().color = Color.white;
+		this.ingameUICanvas.transform.FindDeepChild("Fill").GetComponent<Image>().color = new Color(0.654902f, 0.8784314f, 0.9843137f);
 
 		// In relax mode, remove scoring UI elements
 		if (this.gameMode == GameScene.GameMode.Relax)
@@ -71,7 +77,6 @@ public class GameScene : global::Scene
 		this.restartCheckpointPanel.SetActive(false);
 		this.restartNoCheckpointPanel.SetActive(false);
 
-
 		// bools
 		this.gameOver = false;
 		this.gameOverSetUp = false;
@@ -80,8 +85,6 @@ public class GameScene : global::Scene
 		this.asampler.isMuted = false;
 		this.asampler.isInited = false;
 		this.haveWeDoneFirstFrameShitYet = false;
-		
-		this.ingameUICanvas.transform.FindDeepChild("Fill").GetComponent<Image>().color = new Color(0.654902f, 0.8784314f, 0.9843137f);
 
 		// Level Progress Bar
 		try
@@ -766,6 +769,10 @@ public class GameScene : global::Scene
 
 	private void SetUpGameOverShit()
 	{
+		// TODO: Init this into a member, not a local
+		Text bestScoreText = this.ingameUICanvas.transform.FindDeepChild("BestScoreText").GetComponent<Text>();
+		Image blueUIFill = this.ingameUICanvas.transform.FindDeepChild("Fill").GetComponent<Image>();
+
 		if (this.AllPlayersFinished())
 		{
 			foreach (AudioSource audioSource in this.asampler.audioSources)
@@ -776,6 +783,18 @@ public class GameScene : global::Scene
 
 				// Lower audio volume
 				audioSource.volume = Helpers.Damp(audioSource.volume, 0f, 0.5f);
+			}
+
+			// Fade out UI
+			if (this.ingameUICanvas.active)
+			{
+				// TODO: Stop using lerp and damp lmfao
+				Color visible = new Color(HPTextnAcc.color.r, HPTextnAcc.color.g, HPTextnAcc.color.b, Helpers.Damp(HPTextnAcc.color.a, 0f, 2.5f));
+				this.HPTextnAcc.color = visible;
+				this.scoreText.color = visible;
+				this.comboTextGO.color = visible;
+				bestScoreText.color = visible;
+				blueUIFill.color = new Color(blueUIFill.color.r, blueUIFill.color.b, blueUIFill.color.g, visible.a);
 			}
 
 			this.asampler.isMuted = true;
@@ -796,8 +815,8 @@ public class GameScene : global::Scene
 		HPTextnAcc.text = "";
 		scoreText.text = "";
 		comboTextGO.text = "";
-		this.ingameUICanvas.transform.FindDeepChild("BestScoreText").GetComponent<Text>().text = "";
-		this.ingameUICanvas.transform.FindDeepChild("Fill").GetComponent<Image>().color = new Color(0.666f, 0.666f, 0.666f, 0f);
+		bestScoreText.text = "";
+		blueUIFill.color = new Color(0.666f, 0.666f, 0.666f, 0f); // Spooky
 
 		FullMapData mapData = Singleton<MapsSystem>.Instance.GetMapData(this.mapID);
 
