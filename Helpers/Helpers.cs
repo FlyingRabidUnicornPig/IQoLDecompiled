@@ -17,44 +17,39 @@ using UnityEngine;
 
 public static class Helpers
 {
-	public static string GetGameVersion()
-	{
-		return "Intralism QoL Mod";
-	}
+	public static string GetGameVersion() => "Intralism QoL Mod";
 
 	public static bool IsStoryboardEvent(string eventName)
+		=> Helpers.eventsMap.Exists((EditorEventFunctionInfo x) => x.id == eventName // actual event
+		&& x.eventType == EditorEventFunctionInfo.EditorEventType.Storyboard); // that's a storyboard
+
+	private static double FindArcDifficultyIthink(int eitherNumberOfArcsOrNumberOfCharactersEitherWayIDontLikeThis)
 	{
-		return (!string.IsNullOrEmpty(eventName) && !eventName.Equals("checkpoint") && !Helpers.eventsMap.Exists((EditorEventFunctionInfo x) => x.id == eventName)) || Helpers.eventsMap.Exists((EditorEventFunctionInfo x) => x.id == eventName && x.eventType == EditorEventFunctionInfo.EditorEventType.Storyboard);
+		int x = eitherNumberOfArcsOrNumberOfCharactersEitherWayIDontLikeThis;
+		return -((double)(x * x) / 4.0) + (double)(1.3f * (float)x);
 	}
 
-	private static double FindArcDifficultyIthink(int AFMLIFBPDPG)
-	{
-		return -((double)(AFMLIFBPDPG * AFMLIFBPDPG) / 4.0) + (double)(1.3f * (float)AFMLIFBPDPG);
-	}
-
-	private static double FindSpeedDifficulty(double KEDDLFDAIDE)
-	{
-		return KEDDLFDAIDE / 14.0;
-	}
+	private static double FindSpeedDifficulty(double speedIThink)
+		=> speedIThink / 14.0;
 
 	private static double FindZoomDifficulty(double playerDistance)
 	{
-		if (true)
-		{
-			return 1.0;
-		}
+		return 1.0; // MOD no more zoom difficulty, keeping method for legacy or if we want to revisit
+
+		/* old code
 		playerDistance = Math.Max(playerDistance, 4.0);
 		playerDistance = Math.Min(playerDistance, 40.0);
 		if (playerDistance < 14.0)
 		{
 			return 14.0 / playerDistance;
 		}
-		return playerDistance * playerDistance / 196.0 - playerDistance / 7.0 + 2.0;
+		return playerDistance * playerDistance / 196.0 - playerDistance / 7.0 + 2.0;*/
 	}
 
-	// TODO: Make these compilable
+	// TODO: Make this compilable
 	public static float GetMapDifficulty(MapData data)
 	{
+		// Decrypt map
 		MapData mapData = new MapData(data);
 		if (mapData.configVersion >= 3 && !string.IsNullOrEmpty(mapData.e))
 		{
@@ -63,119 +58,73 @@ public static class Helpers
 				MapData.EData edata = JsonConvert.DeserializeObject<MapData.EData>(global::Console.Error(mapData.e, Singleton<SaveSystem>.Instance.folder));
 				mapData.events.AddRange(edata.events);
 			}
-			catch (Exception)
-			{
-			}
+			catch (Exception) { }
 		}
-		double keddlfdaide = (double)mapData.speed;
-		double playerDistance = 14.0;
-		double num = 0.0;
-		double num2 = (double)mapData.musicTime;
-		bool flag = false;
+
 		double maxTime = (double)mapData.musicTime;
-		foreach (MapEvent mapEvent in from x in mapData.events
-		where x.data[0].Equals("MapEnd")
-		select x)
+		int arcCount = 0;
+
+		// Count arcs and find the earliest MapEnd event
+		foreach (MapEvent mapEvent in mapData.events)
 		{
-			maxTime = (((double)mapEvent.time < maxTime) ? ((double)mapEvent.time) : maxTime);
+			string eventName = mapEvent.data[0];
+
+			if (eventName.Equals("SpawnObj"))
+				arcCount++;
+			else if (eventName.Equals("MapEnd"))
+				maxTime = Math.Min(mapEvent.time, maxTime);
 		}
-		IEnumerable<MapEvent> events = mapData.events;
-		Func<MapEvent, bool> <>9__1;
-		Func<MapEvent, bool> predicate;
-		if ((predicate = <>9__1) == null)
-		{
-			predicate = (<>9__1 = ((MapEvent x) => (double)x.time <= maxTime));
-		}
-		foreach (MapEvent mapEvent2 in events.Where(predicate))
-		{
-			if (mapEvent2.data[0] == "SpawnObj")
-			{
-				if (!flag)
-				{
-					num = (double)mapEvent2.time;
-					flag = true;
-				}
-				num2 = (double)mapEvent2.time;
-			}
-		}
-		if (!flag || num == num2)
-		{
-			return 0f;
-		}
-		double num3 = Helpers.FindZoomDifficulty(playerDistance);
-		double num4 = Helpers.FindSpeedDifficulty(keddlfdaide);
-		double num5 = 0.0;
-		int num6 = 0;
-		double num7 = 0.0;
-		int num8 = 0;
+		
+		// Can't figure out difficulty unless we have 2 or more events
+		if (arcCount < 2) { return 0; }
+		
+		double playerDistance = 14.0; // TODO: Not hardcode this when custom starting position happens
+		double zoomDifficulty = Helpers.FindZoomDifficulty(playerDistance);
+		double speedDifficulty = Helpers.FindSpeedDifficulty((double)mapData.speed);
+
+		int secondsWithArcs = 0;
+
 		List<double> list = new List<double>();
-		Func<MapEvent, bool> <>9__2;
-		for (int i = 0; i < (int)Math.Ceiling(num2); i++)
+
+		for (int i = 0; i < (int)Math.Ceiling(maxTime); i++)
 		{
-			int num9 = 0;
-			double num10 = 0.0;
-			IEnumerable<MapEvent> events2 = mapData.events;
-			Func<MapEvent, bool> predicate2;
-			if ((predicate2 = <>9__2) == null)
+			int totalArcsForThisSecond = 0;
+			double difficultyForThisSecond = 0.0;
+
+			// Fucking oxy programming sucks
+			foreach (MapEvent mapEvent3 in mapData.events.Where(
+				x => (double)x.time <= maxTime && x.time >= i && x.time < i + 1))
 			{
-				predicate2 = (<>9__2 = ((MapEvent x) => (double)x.time <= maxTime));
-			}
-			foreach (MapEvent mapEvent3 in events2.Where(predicate2))
-			{
-				if (mapEvent3.time >= (float)i && mapEvent3.time < (float)(i + 1))
+				if (mapEvent3.data[0] == "MapEnd") break;
+				else if (mapEvent3.data[0] == "SpawnObj")
 				{
-					if (mapEvent3.data[0] == "MapEnd")
-					{
-						break;
-					}
-					if (mapEvent3.data[0] == "SpawnObj")
-					{
-						IEnumerable<char> source = mapEvent3.data[1];
-						if (Helpers.LNIJKGECNME == null)
-						{
-							Helpers.LNIJKGECNME = new Func<char, bool>(Helpers.LFJDIMOEADJ);
-						}
-						int num11 = source.Count(Helpers.LNIJKGECNME) + 1;
-						num9 += num11;
-						double num12 = Helpers.FindArcDifficultyIthink(num11);
-						num10 += num12 * num3 * num4;
-					}
-					if (mapEvent3.data[0] == "SetPlayerDistance")
-					{
-						num3 = Helpers.FindZoomDifficulty((double)float.Parse(mapEvent3.data[1], NumberStyles.Float, NumberFormatInfo.InvariantInfo));
-					}
-					if (mapEvent3.data[0] == "SetSpeed")
-					{
-						num4 = Helpers.FindSpeedDifficulty((double)float.Parse(mapEvent3.data[1], NumberStyles.Float, NumberFormatInfo.InvariantInfo));
-					}
+					int arcsInEvent = mapEvent3.data[1].Count(x => x == '-') + 1;
+
+					totalArcsForThisSecond += arcsInEvent;
+
+					double arcDifficulty = Helpers.FindArcDifficultyIthink(arcsInEvent);
+					difficultyForThisSecond += arcDifficulty * zoomDifficulty * speedDifficulty;
 				}
+				else if (mapEvent3.data[0] == "SetPlayerDistance")
+					zoomDifficulty = Helpers.FindZoomDifficulty((double)float.Parse(mapEvent3.data[1], NumberStyles.Float, NumberFormatInfo.InvariantInfo));
+				else if (mapEvent3.data[0] == "SetSpeed")
+					speedDifficulty = Helpers.FindSpeedDifficulty((double)float.Parse(mapEvent3.data[1], NumberStyles.Float, NumberFormatInfo.InvariantInfo));
 			}
-			if (num9 > 0)
-			{
-				num8++;
-			}
-			if (num7 < num10)
-			{
-				num7 = num10;
-			}
-			if (num10 > 0.0)
-			{
-				num5 += num10;
-				num6++;
-				list.Add(num10);
-			}
+			if (totalArcsForThisSecond > 0)
+				secondsWithArcs++;
+
+			// Take the difficulty of this second and add it to the list
+			if (difficultyForThisSecond > 0.0)
+				list.Add(difficultyForThisSecond);
 		}
-		int num13 = (int)Math.Ceiling((double)num8 * 0.33);
-		double num14 = 0.0;
-		for (int j = 0; j < num13; j++)
-		{
-			double num15 = (from x in list
-			orderby -x
-			select x).ToList<double>()[j];
-			num14 += num15;
-		}
-		double num16 = num14 / (double)num13;
-		return (float)Math.Round(Math.Log((double)num8, 60.0) * num16, 2);
+
+		// Take the most "difficult" third of second-difficulties we have to determine our total difficulty
+		list = list.OrderBy(x=>-x).ToList(); // sort to make more difficult first
+		
+		int third = (int)Math.Ceiling((double)secondsWithArcs * 0.33); // how many seconds will we look at total
+		double averageDifficulty = list.GetRange(0, third).Sum() / third; // average difficulty of the most difficult third
+
+		return (float)Math.Round(Math.Log((double)secondsWithArcs, 60.0) * averageDifficulty, 2); // Throw a log on to make more reasonable numbers or something idfk
 	}
 
 	public static int GetMapMaxScore(MapData CLCBMMEKBBC)
@@ -251,6 +200,17 @@ public static class Helpers
 		return num;
 	}
 
+	// NOTE: Dnspy doesn't like recompiling this method. If you try to "Edit Class" to paste
+	//   code from here to dnspy, it will throw an error at DeepChild because it's ambigious
+	//   to some other bs that doesn't actually exist.
+	// WORKAROUND: To fix this, in dnspy, right click "FindDeepChild" and click "Edit Method"
+	//   The one with the gear, not "Edit Method (C#)"...
+	//   After that, rename FindDeepChild to anything else.
+	//   Repeat this step to rename it back to FindDeepChild.
+	//   Now you can recompile the class without a bs error.
+	//   You will have to do this every time.
+	// I assume this will get fixed when we clean up the hellscape that is the 1000 lines of
+	//   compiler code below, but that doesn't make logical sense. It's just a hunch.
 	public static Transform FindDeepChild(this Transform INBEMGANDKE, string JNOIHECMHJJ)
 	{
 		Transform transform = INBEMGANDKE.Find(JNOIHECMHJJ);
