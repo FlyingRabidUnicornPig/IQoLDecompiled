@@ -31,6 +31,9 @@ dnSpy does not save comments or extra white space, cannot access all the origina
 - Editor Performance increases
   - Selecting objects is less taxing.
   - Caret used extremely bad code, increased performance by 10-14% (jfc)
+- Improved Difficulty Calculation perforamnce
+  - Map-Select loading time is decreased (I went from loading 50 maps in 2.5 seconds to 2 seconds)
+  - Low-difficulty maps may have a changed by up to ±.1
 - Deselect individual objects in Editor with ALT
   - ALT+CTRL to drag-deselect (Bug-feature)
 - **Improved Console**

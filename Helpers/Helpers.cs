@@ -23,11 +23,8 @@ public static class Helpers
 		=> Helpers.eventsMap.Exists((EditorEventFunctionInfo x) => x.id == eventName // actual event
 		&& x.eventType == EditorEventFunctionInfo.EditorEventType.Storyboard); // that's a storyboard
 
-	private static double FindArcDifficultyIthink(int eitherNumberOfArcsOrNumberOfCharactersEitherWayIDontLikeThis)
-	{
-		int x = eitherNumberOfArcsOrNumberOfCharactersEitherWayIDontLikeThis;
-		return -((double)(x * x) / 4.0) + (double)(1.3f * (float)x);
-	}
+	private static double FindDifficultyOfNote(int arcsInNote)
+		=> -((arcsInNote * arcsInNote) / 4.0) + (1.3 * arcsInNote);
 
 	private static double FindSpeedDifficulty(double speedIThink)
 		=> speedIThink / 14.0;
@@ -46,7 +43,6 @@ public static class Helpers
 		return playerDistance * playerDistance / 196.0 - playerDistance / 7.0 + 2.0;*/
 	}
 
-	// TODO: Make this compilable
 	public static float GetMapDifficulty(MapData data)
 	{
 		// Decrypt map
@@ -67,64 +63,70 @@ public static class Helpers
 		// Count arcs and find the earliest MapEnd event
 		foreach (MapEvent mapEvent in mapData.events)
 		{
-			string eventName = mapEvent.data[0];
-
-			if (eventName.Equals("SpawnObj"))
+			if (mapEvent.data[0].Equals("SpawnObj"))
 				arcCount++;
-			else if (eventName.Equals("MapEnd"))
-				maxTime = Math.Min(mapEvent.time, maxTime);
+			else if (mapEvent.data[0].Equals("MapEnd"))
+				maxTime = Math.Min(mapEvent.time, maxTime); // We want the earliest MapEnd
 		}
 		
 		// Can't figure out difficulty unless we have 2 or more events
 		if (arcCount < 2) { return 0; }
 		
-		double playerDistance = 14.0; // TODO: Not hardcode this when custom starting position happens
+		double playerDistance = 14.0;
 		double zoomDifficulty = Helpers.FindZoomDifficulty(playerDistance);
 		double speedDifficulty = Helpers.FindSpeedDifficulty((double)mapData.speed);
 
-		int secondsWithArcs = 0;
+		// Find the difficulty of every second-chunk
+		List<double> chunks = new List<double>();
+		int currentSecond = 0;
+		double difficultyForThisSecond = 0.0;
 
-		List<double> list = new List<double>();
-
-		for (int i = 0; i < (int)Math.Ceiling(maxTime); i++)
+		foreach (MapEvent mapEvent in mapData.events)
 		{
-			int totalArcsForThisSecond = 0;
-			double difficultyForThisSecond = 0.0;
+			string eventName = mapEvent.data[0];
+			bool mapEnd = eventName.Equals("MapEnd");
 
-			// Fucking oxy programming sucks
-			foreach (MapEvent mapEvent3 in mapData.events.Where(
-				x => (double)x.time <= maxTime && x.time >= i && x.time < i + 1))
+			if (mapEvent.time >= currentSecond + 1 || mapEnd)
 			{
-				if (mapEvent3.data[0] == "MapEnd") break;
-				else if (mapEvent3.data[0] == "SpawnObj")
-				{
-					int arcsInEvent = mapEvent3.data[1].Count(x => x == '-') + 1;
+				// Take the difficulty of the last second and add it to the list
+				if (difficultyForThisSecond > 0.0)
+					chunks.Add(difficultyForThisSecond);
 
-					totalArcsForThisSecond += arcsInEvent;
-
-					double arcDifficulty = Helpers.FindArcDifficultyIthink(arcsInEvent);
-					difficultyForThisSecond += arcDifficulty * zoomDifficulty * speedDifficulty;
-				}
-				else if (mapEvent3.data[0] == "SetPlayerDistance")
-					zoomDifficulty = Helpers.FindZoomDifficulty((double)float.Parse(mapEvent3.data[1], NumberStyles.Float, NumberFormatInfo.InvariantInfo));
-				else if (mapEvent3.data[0] == "SetSpeed")
-					speedDifficulty = Helpers.FindSpeedDifficulty((double)float.Parse(mapEvent3.data[1], NumberStyles.Float, NumberFormatInfo.InvariantInfo));
+				// reset our values for the next chunk
+				currentSecond = (int)Math.Floor(mapEvent.time);
+				difficultyForThisSecond = 0;
+				
+				// ew, you made an oxyif. Cleaner code tho
+				if (mapEnd) break;	
 			}
-			if (totalArcsForThisSecond > 0)
-				secondsWithArcs++;
 
-			// Take the difficulty of this second and add it to the list
-			if (difficultyForThisSecond > 0.0)
-				list.Add(difficultyForThisSecond);
+			if (eventName.Equals("SpawnObj"))
+			{
+				// a '-' is used between each direction in a note
+				int arcsInEvent = mapEvent.data[1].Count(x => x == '-') + 1;
+				double arcDifficulty = Helpers.FindDifficultyOfNote(arcsInEvent);
+			
+				difficultyForThisSecond += arcDifficulty * zoomDifficulty * speedDifficulty;
+			}
+			/* we don't care 'bout zooms
+			else if (eventName.Equals("SetPlayerDistance")) // calculate zoom difficulty
+				zoomDifficulty = 1f; // we don't need to parse and other bs it's just 1*/
+			else if (eventName.Equals("SetSpeed")) // calculate speed difficulty
+				speedDifficulty = Helpers.FindSpeedDifficulty((double)float.Parse(mapEvent.data[1]));
 		}
 
-		// Take the most "difficult" third of second-difficulties we have to determine our total difficulty
-		list = list.OrderBy(x=>-x).ToList(); // sort to make more difficult first
+		// Take the most "difficult" third of second-chunks to determine total difficulty
+		// sort by more difficult chunks first
+		chunks = chunks.OrderBy(x=>-x).ToList();
 		
-		int third = (int)Math.Ceiling((double)secondsWithArcs * 0.33); // how many seconds will we look at total
-		double averageDifficulty = list.GetRange(0, third).Sum() / third; // average difficulty of the most difficult third
+		// how many seconds will we look at total
+		int third = (int)Math.Ceiling((double)chunks.Count * 0.33);
+		
+		// average difficulty of the most difficult third
+		double averageDifficulty = chunks.GetRange(0, third).Sum() / third;
 
-		return (float)Math.Round(Math.Log((double)secondsWithArcs, 60.0) * averageDifficulty, 2); // Throw a log on to make more reasonable numbers or something idfk
+		// Throw a log on to make more reasonable numbers or something idfk
+		return (float)Math.Round(Math.Log((double)chunks.Count, 60.0) * averageDifficulty, 2);
 	}
 
 	public static int GetMapMaxScore(MapData CLCBMMEKBBC)
