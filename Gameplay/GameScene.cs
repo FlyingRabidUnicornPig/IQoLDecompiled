@@ -748,6 +748,7 @@ public class GameScene : global::Scene
 		this.doneWithOxy = true;
 	}
 
+	// TODO: GIANT FUCKING METHOD FUCKING MAKE IT MULTIPLE FOR READABILITY
 	private void SetUpGameOverShit()
 	{
 		// TODO: Init this into a member, not a local
@@ -832,10 +833,11 @@ public class GameScene : global::Scene
 		GameObject resetButton            = GameObject.Find("ResetButton");
 
 		int currentScore = this.pbase.GetCurrentScore();
+
 		// Ranked play? (Official on hardcore/normal)
 		bool isRanked = (this.gameMode == GameScene.GameMode.Hardcore || this.gameMode == GameScene.GameMode.Normal)
-		                && !string.IsNullOrEmpty(mapData.workshopId)
-				        && RanksSystem.GetOfficialMapsList().Exists((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId)
+		                && !string.IsNullOrEmpty(mapData.workshopId) // fuck this obscured string bullshit
+				        && RanksSystem.GetOfficialMapsList().Exists((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId) // Throws error here (I think....) but things seem to be fine? idfk i can't fix this error fucking bullshit
 				        && x.isOfficial);
 
 		if (finalScoreText != null)	        finalScoreText.SetActive(!isRanked);

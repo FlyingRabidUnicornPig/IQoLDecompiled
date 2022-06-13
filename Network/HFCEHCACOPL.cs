@@ -1,5 +1,5 @@
 /*
-Prolly network shit
+Prolly network shit, may be unused
 */
 
 using System;
