@@ -52,4 +52,5 @@ dnSpy does not save comments or extra white space, cannot access all the origina
 ### Bugs To Squash before release
 - Some sliders may start as float sliders when they should be integer sliders in editor. **Workaround** press apply and they will fix themselves.
 - Using loadscene 2 to load the editor before offline mode has been set causes some visual glitches. **Workaround:** start offline mode before using any loading commands.
+- Fix error on results screen, seems to cause some inconsistent behavior on game end, sometimes softlocking, sometimes showing more detail than expected.
 - Vanilla Bug-Feature: CTRL+ALT is the only way to drag-deselect, this seems to be a bug from vanilla, as there's no code that is clearly for this purpose. I would rather drag-deselect was ALT only, but when I try that, Unity starts ignoring alt...
