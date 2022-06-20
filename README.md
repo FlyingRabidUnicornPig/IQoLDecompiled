@@ -1,3 +1,5 @@
+[Please Consider Donating to my Ko-fi](https://ko-fi.com/dustdust)
+
 # IQoL Decompiled
 The decompiled and deobfuscated files for Intralism and IQoL.
 
@@ -25,15 +27,15 @@ dnSpy does not save comments or extra white space, cannot access all the origina
 2. Prep for release, squash bugs, finish up cleanup, etc. Then upload new .dll to [IQoL](https://github.com/FlyingRabidUnicornPig/IntralismQoLMod)
 3. Keep this repo updated with each IQoL update for source control. Plan for missed files, a double-check should be done every month or two.
 4. Possibly make a tool to make step 3 easier.
-5. When do i [make money](https://ko-fi.com/dustdust) from doing this?
 
 ### New Features for release
 - Editor Performance increases
   - Selecting objects is less taxing.
   - Caret used extremely bad code, increased performance by 10-14% (jfc)
-- Improved Difficulty Calculation performance
-  - Map-Select loading time is decreased (I went from loading 50 maps in 2.5 seconds to 2 seconds)
-  - Low-difficulty maps may have changed by up to ±.1
+- Faster Map Loading (On my computer with decent CPU, loading 50 editor maps went from 2.5 seconds to 1.83 seconds)
+ - Difficulty Calculation is less performance intensive
+   - Low difficulty maps may have had their difficulty changed by up to ±.1)
+ - Optimized LevelsListElement (the map icon and all the buttons that let you select a map, rate for workshop, see more info, etc)
 - Deselect individual objects in Editor with ALT
   - ALT+CTRL to drag-deselect (Bug-feature)
 - **Improved Console**

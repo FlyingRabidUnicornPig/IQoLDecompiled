@@ -4,4 +4,4 @@ How to contribute - Not a priority, until at least dump is done, and maybe if th
 
 Need to match releases between IQoL and here for better source control. Branches, Blames, whatever. Gonna be hell if i don't make sure these repos match.
 
-I need to make fucking good quality videos of this project - I need money and a portfolio. Dev logs, comparison vids, idk something...
+Ensure nothing important was broken by removing LevelEditorScene, the old map editor. Revert to an [old .dll](https://github.com/FlyingRabidUnicornPig/IQoLDecompiled/blob/11ea506258be974ae084e694bdfd1cd5fc5e1620/Assembly-CSharp.dll) to bring back the code for this class

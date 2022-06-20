@@ -2,7 +2,7 @@
 Hopefully I didn't break anything (important) with this one, it was a huge obfuscated file.
 
 TODO: Fix enumerator bs and make them list loops or whatever for readability
-TODO: Can probably remove duplicant methods from InventorySelector
+TODO: Can probably remove duplicant methods, from InventorySelector
 */
 
 using System;
