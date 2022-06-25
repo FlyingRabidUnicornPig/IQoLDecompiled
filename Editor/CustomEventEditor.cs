@@ -108,7 +108,7 @@ public class CustomEventEditor : MonoBehaviour
 	}
 
 	// TODO: Store all possibilities in memory and retrieve from them so we only call this once per eventtype per editor-launch
-	//       Rebuilding literally fucking every time is lazy and unotpimized and garbo.
+	//       Rebuilding literally fucking every time is lazy and unoptimized and garbo.
 	private void RebuildEditor(EditorEventFunctionInfo eeFuncInfo)
 	{
 		GameObject gameObject2 = null;

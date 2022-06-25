@@ -442,11 +442,13 @@ public class GameScene : global::Scene
 
 		// Submit score and "replay" to server
 		this.pbase.StopReplayRecording();
-		if (Singleton<SaveSystem>.Instance.GetInt("settings.enableranking", 1, null) == 1 &&
-			this.gameMode != GameScene.GameMode.Relax &&
-			!string.IsNullOrEmpty(mapData.workshopId) &&
-			RanksSystem.IsOfficial(ulong.Parse(mapData.workshopId), false) &&
-			mapData.source == FullMapData.MapSource.Workshop)
+		ulong workshopId = 0;
+		if (Singleton<SaveSystem>.Instance.GetInt("settings.enableranking", 1, null) == 1
+			&& this.gameMode != GameScene.GameMode.Relax
+			&& mapData.source == FullMapData.MapSource.Workshop
+			&& ulong.TryParse(mapData.workshopId, out workshopId)
+			&& workshopId != 0
+			&& RanksSystem.IsOfficial(workshopId, false))
 		{
 			string mapFilePath = mapData.fullLevelPath + "/" + Helpers.levelConfigFileName;
 			string replayJson  = this.pbase.Replay() != null ? JsonConvert.SerializeObject(this.pbase.Replay()) : "{}";
@@ -834,11 +836,12 @@ public class GameScene : global::Scene
 
 		int currentScore = this.pbase.GetCurrentScore();
 
+
+		ulong workshopId = 0;
 		// Ranked play? (Official on hardcore/normal)
 		bool isRanked = (this.gameMode == GameScene.GameMode.Hardcore || this.gameMode == GameScene.GameMode.Normal)
-		                && !string.IsNullOrEmpty(mapData.workshopId) // fuck this obscured string bullshit
-				        && RanksSystem.GetOfficialMapsList().Exists((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId) // Throws error here (I think....) but things seem to be fine? idfk i can't fix this error fucking bullshit
-				        && x.isOfficial);
+		                && ulong.TryParse(mapData.workshopId, out workshopId) // Mod: Stop assuming workshopID is always parsable
+		                && RanksSystem.GetOfficialMapsList().Exists((RanksSystem.Map x) => x.id == workshopId && x.isOfficial);
 
 		if (finalScoreText != null)	        finalScoreText.SetActive(!isRanked);
 
@@ -873,18 +876,19 @@ public class GameScene : global::Scene
 		if (checkpointsScoreText != null)   checkpointsScoreText.GetComponent<Text>().text = "" + this.pbase.checkpointsUsed;
 		if (endlessLoopsScoreText != null)  endlessLoopsScoreText.GetComponent<Text>().text = "" + this.pbase.loopsCount;
 
-		if (maxPossiblePointsText != null)  maxPossiblePointsText.GetComponent<Text>().text = RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId)).difficulty.ToString("0.00");
+		if (maxPossiblePointsText != null && isRanked)
+			maxPossiblePointsText.GetComponent<Text>().text = RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => x.id == workshopId).difficulty.ToString("0.00");
 		if (finalScoreSmallText != null)    finalScoreSmallText.GetComponent<Text>().text = "" + currentScore;
 			
-		if (highScoreMaxPointsText != null)
+		if (highScoreMaxPointsText != null && isRanked)
 		{
-			float num = (float)this.pbase.lastBestScore / (float)Helpers.GetMapMaxScore(this.pbase.fullMapData.mapData) * RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId)).difficulty;
+			float num = (float)this.pbase.lastBestScore / (float)Helpers.GetMapMaxScore(this.pbase.fullMapData.mapData) * RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => x.id == workshopId).difficulty;
 			highScoreMaxPointsText.GetComponent<Text>().text = (Math.Floor((double)(num * 100f)) / 100.0).ToString("0.00");
 		}
 			
-		if (pointsText != null)
+		if (pointsText != null && isRanked)
 		{
-			float num2 = (float)currentScore / (float)Helpers.GetMapMaxScore(this.pbase.fullMapData.mapData) * RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => x.id == ulong.Parse(mapData.workshopId)).difficulty;
+			float num2 = (float)currentScore / (float)Helpers.GetMapMaxScore(this.pbase.fullMapData.mapData) * RanksSystem.GetOfficialMapsList().Find((RanksSystem.Map x) => x.id == workshopId).difficulty;
 			num2 = ((num2 >= 0f) ? num2 : 0f);
 			pointsText.GetComponent<Text>().text = (Math.Floor((double)(num2 * 100f)) / 100.0).ToString("0.00");
 		}

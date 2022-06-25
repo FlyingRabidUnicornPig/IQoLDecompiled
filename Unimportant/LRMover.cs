@@ -36,7 +36,7 @@ public class LRMover : MonoBehaviour
 				base.transform.localPosition = Vector3.Lerp(base.transform.localPosition, base.transform.localPosition + new Vector3(0f, 0f, -1f) * this.mspeed + new Vector3(0f, this.position.y + Mathf.Cos(this.IACGDFHKCAE) * this.multiply, 0f), Time.deltaTime);
 			else if (c == 'Z')
 				base.transform.localPosition = Vector3.Lerp(base.transform.localPosition, new Vector3(this.position.x, this.position.y, this.position.z + Mathf.Sin(this.IACGDFHKCAE) * this.multiply), Time.deltaTime);
-			return; // I'm assuming only X, Y, or Z is being inputted into axis
+			return; // I'm assuming only X, Y, or Z is being inputted into axis, unlike vanilla code, wait why am i fixing this shit?
 		}
 
 		// Should this be above the return?
