@@ -248,8 +248,7 @@ public class GameScene : global::Scene
 	public IEnumerator ShowMessage(string message, float howLong)
 	{
 		// Why bother with 0 timing?
-		if (howLong == 0f)
-			yield break;
+		if (howLong == 0f) yield break;
 
 		this.messageCanvas.GetComponentInChildren<Text>().text = message;
 
@@ -447,8 +446,7 @@ public class GameScene : global::Scene
 			&& this.gameMode != GameScene.GameMode.Relax
 			&& mapData.source == FullMapData.MapSource.Workshop
 			&& ulong.TryParse(mapData.workshopId, out workshopId)
-			&& workshopId != 0
-			&& RanksSystem.IsOfficial(workshopId, false))
+			&& RanksSystem.IsOfficial(workshopId))
 		{
 			string mapFilePath = mapData.fullLevelPath + "/" + Helpers.levelConfigFileName;
 			string replayJson  = this.pbase.Replay() != null ? JsonConvert.SerializeObject(this.pbase.Replay()) : "{}";
@@ -839,9 +837,10 @@ public class GameScene : global::Scene
 
 		ulong workshopId = 0;
 		// Ranked play? (Official on hardcore/normal)
-		bool isRanked = (this.gameMode == GameScene.GameMode.Hardcore || this.gameMode == GameScene.GameMode.Normal)
+		bool isRanked = mapData.source == FullMapData.MapSource.Workshop
+						&& (this.gameMode == GameScene.GameMode.Hardcore || this.gameMode == GameScene.GameMode.Normal)
 		                && ulong.TryParse(mapData.workshopId, out workshopId) // Mod: Stop assuming workshopID is always parsable
-		                && RanksSystem.GetOfficialMapsList().Exists((RanksSystem.Map x) => x.id == workshopId && x.isOfficial);
+		                && RanksSystem.IsOfficial(workshopId);
 
 		if (finalScoreText != null)	        finalScoreText.SetActive(!isRanked);
 
