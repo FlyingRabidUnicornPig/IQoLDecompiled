@@ -35,8 +35,18 @@ public class DiscordController : MonoBehaviour
 		this.presence.largeImageKey = "icon_border";
 		this.presence.smallImageKey = null;
 
-		CSteamID steamID = SteamUser.GetSteamID();
-		if (RanksSystem.GetLoadedRank(steamID) != null)
+		CSteamID steamID = new CSteamID();
+		try
+		{
+			if (!Helpers.SteamAPIDown)
+				steamID = SteamUser.GetSteamID();
+		}
+		catch (InvalidOperationException e)
+		{
+			Helpers.SteamAPIDown = true;
+		}
+
+		if (!Helpers.SteamAPIDown && RanksSystem.GetLoadedRank(steamID) != null)
 		{
 			RanksSystem.PlayersRank loadedRank = RanksSystem.GetLoadedRank(steamID);
 

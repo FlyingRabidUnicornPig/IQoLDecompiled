@@ -112,12 +112,16 @@ public class GameManager : Singleton<GameManager>
 											  //       specifically "too long to respond" issues don't work with quick-offline
 		verified = true;
 
-		GameManager.IsOffline = offlineMode;
+		GameManager.IsOffline = offlineMode || Helpers.SteamAPIDown;
 
 		if (!GameManager.IsOffline)  // MOD: Why did oxy let offline mode attempt to connect to steam?
+		{	
 			SteamUserStats.RequestCurrentStats();
 
-		Singleton<SaveSystem>.Instance.Init(Helpers.Md5Sum("Data" + SteamUser.GetSteamID().m_SteamID).ToUpper());
+			Singleton<SaveSystem>.Instance.Init(Helpers.Md5Sum("Data" + SteamUser.GetSteamID().m_SteamID).ToUpper());
+		}
+		else
+			Singleton<SaveSystem>.Instance.InitWithFirstUseableSave();
 		// Do we see all messages or just warnings/errors
 		UnityEngine.Debug.unityLogger.filterLogType =
 			(Singleton<SaveSystem>.Instance.GetBool("console.logAll", false, null) ? LogType.Log : LogType.Warning);
@@ -158,8 +162,18 @@ public class GameManager : Singleton<GameManager>
 		else
 			DiscordController.Instance.UpdateJoin(joinSecret, partyID, partySize, partyMax);
 
-		SteamFriends.SetRichPresence("status", details + (string.IsNullOrEmpty(state) ? "" : "\n" + state));
-		SteamFriends.SetRichPresence("connect", joinSecret);
+		if (!Helpers.SteamAPIDown)
+		{
+			try
+			{
+				SteamFriends.SetRichPresence("status", details + (string.IsNullOrEmpty(state) ? "" : ("\n" + state)));
+				SteamFriends.SetRichPresence("connect", joinSecret);
+			}
+			catch
+			{
+				Helpers.SteamAPIDown = true;
+			}
+		}
 	}
 
 	public void ExitGame() => Application.Quit();

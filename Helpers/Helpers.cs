@@ -208,9 +208,10 @@ public static class Helpers
 	// WORKAROUND: To fix this, in dnspy, right click "FindDeepChild" and click "Edit Method"
 	//   The one with the gear, not "Edit Method (C#)"...
 	//   After that, rename FindDeepChild to anything else.
-	//   Repeat this step to rename it back to FindDeepChild.
+	//   Save Module
+	//   Rename the method back to FindDeepChild.
 	//   Now you can recompile the class without a bs error.
-	//   You will have to do this every time.
+	//   This will last until you save again
 	// I assume this will get fixed when we clean up the hellscape that is the 1000 lines of
 	//   compiler code below, but that doesn't make logical sense. It's just a hunch.
 	public static Transform FindDeepChild(this Transform INBEMGANDKE, string JNOIHECMHJJ)
@@ -264,7 +265,7 @@ public static class Helpers
 
 	public static void ObtainAchievement(int JMMILEFMACB)
 	{
-		if (GameManager.IsOwner())
+		if (!Helpers.SteamAPIDown && GameManager.IsOwner())
 		{
 			string text = "NEW_ACHIEVEMENT_1_" + JMMILEFMACB.ToString();
 			bool flag = false;
@@ -312,7 +313,7 @@ public static class Helpers
 
 	public static void SetStat(string JMMILEFMACB, int DPNHODJHGJL)
 	{
-		if (GameManager.IsOwner())
+		if (!Helpers.SteamAPIDown && GameManager.IsOwner())
 		{
 			SteamUserStats.SetStat(JMMILEFMACB, DPNHODJHGJL);
 			SteamUserStats.StoreStats();
@@ -321,7 +322,7 @@ public static class Helpers
 
 	public static void AddToStat(string JMMILEFMACB, int DPNHODJHGJL)
 	{
-		if (GameManager.IsOwner())
+		if (!Helpers.SteamAPIDown && GameManager.IsOwner())
 		{
 			int stat = Helpers.GetStat(JMMILEFMACB);
 			SteamUserStats.SetStat(JMMILEFMACB, stat + DPNHODJHGJL);
@@ -1293,7 +1294,18 @@ public static class Helpers
 
 	private static float playTestLastTime;
 
-	
+	private static bool steamAPIDown = false;
+	public static bool SteamAPIDown
+	{
+		get => steamAPIDown;
+		set
+		{
+			steamAPIDown = value;
+
+			if (value == true)
+				Debug.LogError("SteamWorks API is down!");
+		}
+	}
 
 	// TODO:
 	// Figure out what uses these so we can fix it and then get rid of these blocks
