@@ -25,8 +25,7 @@ dnSpy does not save comments or extra white space, cannot access all the origina
   - Comment on shit
   - Improve code style for readability
 2. Prep for release, squash bugs, finish up cleanup, etc. Then upload new .dll to [IQoL](https://github.com/FlyingRabidUnicornPig/IntralismQoLMod)
-3. Keep this repo updated with each IQoL update for source control. Plan for missed files, a double-check should be done every month or two.
-4. Possibly make a tool to make step 3 easier.
+3. Keep this repo updated with each IQoL update for source control. Plan for missed files, a double-check should be done every month or two. (consider changing to have only one repo, would make .dll/source changes easier to manage)
 
 ### New Features for release
 - Editor Performance increases
@@ -47,9 +46,13 @@ dnSpy does not save comments or extra white space, cannot access all the origina
 ### Bug fixes
 - Vanilla: Background colors not being parsed correctly in editor or something idr
 - Vanilla: Can record highscores on first attempt again (oxy was checking for something only hackers could do cool)
+- Vanilla: Offline Mode will now work when the Steam API is down
+  - You can play editor maps and use the editor.
+  - TODO: Load downloaded workshop maps through File control rather than UGC control
 - Vanilla/Mod: Fixed game over screen (again (again))
 - Mod: "Fixed" quickstart offline mode (need to double check with a flakey connection to see if it really works)
 - Mod: "Start offline mode" message won't pop up if you press o in console.
+- Mod: Fixed 1/6th and 1/12 snap colors
 
 ### Bugs To Squash before release
 - Some sliders may start as float sliders when they should be integer sliders in editor. **Workaround** press apply and they will fix themselves.
