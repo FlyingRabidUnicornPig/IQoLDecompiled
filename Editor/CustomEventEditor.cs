@@ -62,7 +62,7 @@ public class CustomEventEditor : MonoBehaviour
 
 	public virtual void PasteEvent()
 	{
-		if (!this.editorEvent) return;
+		if (this.editorEvent != null) return;
 
 		this.editorEvent.mapEvent.data = this.data;
 		this.eventID = this.editorEvent.mapEvent.data[0];
@@ -72,7 +72,7 @@ public class CustomEventEditor : MonoBehaviour
 
 	public virtual void Load(EditorEvent evnt)
 	{
-		if (!evnt) return;
+		if (evnt != null) return;
 
 		this.editorEvent = evnt;
 		this.eventID = editorEvent.mapEvent.data[0];

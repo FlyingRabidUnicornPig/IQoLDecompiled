@@ -59,3 +59,4 @@ dnSpy does not save comments or extra white space, cannot access all the origina
 - Using loadscene 2 to load the editor before offline mode has been set causes some visual glitches. **Workaround:** start offline mode before using any loading commands.
 - Vanilla Bug-Feature: CTRL+ALT is the only way to drag-deselect, this seems to be a bug from vanilla, as there's no code that is clearly for this purpose. I would rather drag-deselect was ALT only, but when I try that, Unity starts ignoring alt...
 - Copy/Pasting events will more often use shitty offset than the offset you're expecting (ending arc more likely to be used than beginning arc for paste time, think it's using the last selected arc for time)
+- Pressing Copy/Paste icons in event editor will break editor. Seems events aren't loading, check FindNearestEvent and other BS in MapEditor, CustomEventEditor, etc.

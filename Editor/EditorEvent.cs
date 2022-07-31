@@ -140,9 +140,11 @@ public class EditorEvent : MonoBehaviour
 
 	private float FindYPosition()
 	{
+		// Whenever we have more than 2 tracks, we will need to track the Track the event is tracking
 		if (Singleton<MapEditor>.Instance.eventsCanvases.Count != 2)
 			return Singleton<MapEditor>.Instance.eventsCanvases[this.TrackID].grid.position.y;
 
+		// otherwise check if storyboard event, if yes, use y position of storyboard track, otherwise use gameplay track's y position
 		bool isStoryboard = Helpers.IsStoryboardEvent(this.mapEvent.data[0]);
 		return Singleton<MapEditor>.Instance.eventsCanvases.Find(
 			x => x.forType == isStoryboard ? MapEditor.EventType.Storyboard : MapEditor.EventType.Gameplay).grid.position.y;
@@ -152,7 +154,7 @@ public class EditorEvent : MonoBehaviour
 	{
 		Vector3 vector = Camera.main.WorldToScreenPoint(base.transform.position);
 
-		// Is my mom (arc pattern sprite) too fat? Extend her optimization window if she is
+		// Is your mom (arc pattern sprite) fat (uses left or right arcs)?
 		float arcMod = EditorEvent.yourMomIsSoFat.Contains(this.yourMom) ? 100f : 50f;
 		float spriteMod = this.imageRightActive ? 200f : 0f;
 
